@@ -5,7 +5,7 @@
 
   export let title: string;
   export let data: DailyActivityPoint[];
-  export let color: string = '#00d9ff'; // Cyan default
+  export let color: string = '#7c9cff'; // Cyan default
 
   let canvas: HTMLCanvasElement;
   let chart: Chart | null = null;
@@ -72,7 +72,7 @@
   });
 </script>
 
-<div class="bg-bg-card rounded-md p-3">
+<div class="bg-bg-card rounded-xl p-3">
   <div class="flex items-center justify-between mb-1">
     <div class="text-text-muted text-xs uppercase tracking-wider">{title}</div>
     <div class="text-text-muted text-xs">Avg: {average}/day</div>

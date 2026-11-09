@@ -64,11 +64,11 @@
 
   // macOS dark theme colors
   const colors = {
-    sky: '#00d9ff',
-    mauve: '#a855f7',
-    green: '#00ff88',
-    yellow: '#ffd93d',
-    peach: '#ffb347',
+    sky: '#7c9cff',
+    mauve: '#a78bfa',
+    green: '#34d399',
+    yellow: '#fbbf24',
+    peach: '#fb923c',
   };
 
   onMount(fetchInsights);
@@ -92,7 +92,7 @@
       <div class="text-xs text-text-muted">Loading insights...</div>
     </div>
   {:else if error}
-    <div class="bg-bg-card rounded-md p-4 text-center">
+    <div class="bg-bg-card rounded-xl p-4 text-center">
       <div class="text-xs text-text-secondary mb-1">No usage data yet</div>
       <div class="text-xs text-text-muted">Use Claude Code to start tracking</div>
     </div>
@@ -129,7 +129,7 @@
         <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Peak Activity</span>
         <div class="flex-1 h-px bg-border-secondary"></div>
       </div>
-      <div class="bg-bg-card rounded-md p-3">
+      <div class="bg-bg-card rounded-xl p-3">
         <div class="space-y-2">
           <div class="flex items-center justify-between">
             <span class="text-xs text-text-muted">Most Active Hour</span>

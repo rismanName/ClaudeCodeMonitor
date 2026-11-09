@@ -6,69 +6,69 @@ export default {
       colors: {
         // macOS-style dark theme (matching Swift version)
         // Base colors - neutral dark grays
-        'base': '#1c1c1e',           // Main background
-        'mantle': '#161618',         // Darker background
-        'crust': '#0d0d0f',          // Darkest background
+        'base': '#111113',           // Main background
+        'mantle': '#0c0c0e',         // Darker background
+        'crust': '#08080a',          // Darkest background
 
         // Surface colors
-        'surface-0': '#2c2c2e',      // Card background
-        'surface-1': '#3a3a3c',      // Hover state
-        'surface-2': '#48484a',      // Active state
+        'surface-0': '#18181b',      // Card background
+        'surface-1': '#222227',      // Hover state
+        'surface-2': '#303037',      // Active state
 
         // Overlay colors
-        'overlay-0': '#8e8e93',      // Muted text (good contrast)
-        'overlay-1': '#a1a1a6',      // Lighter muted
-        'overlay-2': '#b4b4b9',      // Lightest muted
+        'overlay-0': '#8b8b94',      // Muted text (good contrast)
+        'overlay-1': '#a1a1aa',      // Lighter muted
+        'overlay-2': '#b8b8c0',      // Lightest muted
 
         // Text colors
-        'text': '#ffffff',           // Primary text
-        'subtext-1': '#e5e5e7',      // Secondary text
-        'subtext-0': '#c7c7cc',      // Tertiary text
+        'text': '#f4f4f5',           // Primary text
+        'subtext-1': '#d4d4d8',      // Secondary text
+        'subtext-0': '#a1a1aa',      // Tertiary text
 
         // Accent colors - matching Swift app
-        'pink': '#ff6b9d',
-        'mauve': '#a855f7',          // Purple (for donut chart)
-        'red': '#ff6b6b',            // Softer red
-        'peach': '#ffb347',          // Orange
-        'yellow': '#ffd93d',         // Yellow
-        'green': '#00d9ff',          // Cyan-green (Swift uses cyan for green accent)
-        'teal': '#00d9ff',           // Teal/Cyan
-        'sky': '#00d9ff',            // Cyan (primary accent)
-        'blue': '#007aff',           // macOS blue
-        'lavender': '#a855f7',       // Purple
+        'pink': '#f472b6',
+        'mauve': '#a78bfa',          // Purple (for donut chart)
+        'red': '#f87171',            // Softer red
+        'peach': '#fb923c',          // Orange
+        'yellow': '#fbbf24',         // Yellow
+        'green': '#34d399',          // Cyan-green (Swift uses cyan for green accent)
+        'teal': '#2dd4bf',           // Teal/Cyan
+        'sky': '#38bdf8',            // Cyan (primary accent)
+        'blue': '#5b8def',           // macOS blue
+        'lavender': '#a78bfa',       // Purple
 
         // Semantic aliases for the app
-        'bg-primary': '#1c1c1e',      // Main background
-        'bg-secondary': '#161618',    // Darker
-        'bg-tertiary': '#0d0d0f',     // Darkest
-        'bg-card': '#2c2c2e',         // Card background
-        'bg-card-hover': '#3a3a3c',   // Card hover
+        'bg-primary': '#111113',      // Main background
+        'bg-secondary': '#0c0c0e',    // Darker
+        'bg-tertiary': '#08080a',     // Darkest
+        'bg-card': '#18181b',         // Card background
+        'bg-card-hover': '#222227',   // Card hover
 
-        'border-primary': '#3a3a3c',  // Primary border
-        'border-secondary': '#2c2c2e', // Secondary border
-        'border-focus': '#007aff',    // Focus ring
+        'border-primary': '#2a2a30',  // Primary border
+        'border-secondary': '#26262b', // Secondary border
+        'border-focus': '#5b8def',    // Focus ring
 
-        'text-primary': '#ffffff',    // Primary text
-        'text-secondary': '#e5e5e7',  // Secondary text
-        'text-muted': '#8e8e93',      // Muted text
+        'text-primary': '#f4f4f5',    // Primary text
+        'text-secondary': '#d4d4d8',  // Secondary text
+        'text-muted': '#8b8b94',      // Muted text
 
         // Accent colors mapped to semantic names
-        'accent-primary': '#00d9ff',  // Cyan
-        'accent-green': '#00ff88',    // Bright green for positive
-        'accent-cyan': '#00d9ff',     // Cyan
-        'accent-purple': '#a855f7',   // Purple
-        'accent-orange': '#ffb347',   // Orange
-        'accent-yellow': '#ffd93d',   // Yellow
-        'accent-red': '#ff6b6b',      // Red for negative
-        'accent-blue': '#007aff',     // macOS blue
-        'accent-pink': '#ff6b9d',     // Pink
-        'accent-teal': '#00d9ff',     // Teal
+        'accent-primary': '#7c9cff',  // Cyan
+        'accent-green': '#34d399',    // Bright green for positive
+        'accent-cyan': '#38bdf8',     // Cyan
+        'accent-purple': '#a78bfa',   // Purple
+        'accent-orange': '#fb923c',   // Orange
+        'accent-yellow': '#fbbf24',   // Yellow
+        'accent-red': '#f87171',      // Red for negative
+        'accent-blue': '#5b8def',     // macOS blue
+        'accent-pink': '#f472b6',     // Pink
+        'accent-teal': '#2dd4bf',     // Teal
 
         // Legacy aliases (for compatibility)
-        surface: '#1c1c1e',
-        'surface-light': '#161618',
-        'surface-lighter': '#2c2c2e',
-        accent: '#00d9ff',
+        surface: '#111113',
+        'surface-light': '#0c0c0e',
+        'surface-lighter': '#18181b',
+        accent: '#7c9cff',
       },
       fontFamily: {
         sans: [
@@ -121,10 +121,10 @@ export default {
       boxShadow: {
         'card': '0 2px 8px rgba(0, 0, 0, 0.4)',
         'card-hover': '0 4px 12px rgba(0, 0, 0, 0.5)',
-        'glow-sm': '0 0 10px rgba(0, 217, 255, 0.2)',     // Cyan glow
-        'glow-md': '0 0 20px rgba(0, 217, 255, 0.3)',     // Cyan glow
-        'glow-green': '0 0 15px rgba(0, 255, 136, 0.25)', // Green glow
-        'glow-purple': '0 0 15px rgba(168, 85, 247, 0.25)', // Purple glow
+        'glow-sm': '0 0 10px rgba(124, 156, 255, 0.2)',     // Cyan glow
+        'glow-md': '0 0 20px rgba(124, 156, 255, 0.3)',     // Cyan glow
+        'glow-green': '0 0 15px rgba(52, 211, 153, 0.25)', // Green glow
+        'glow-purple': '0 0 15px rgba(167, 139, 250, 0.25)', // Purple glow
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

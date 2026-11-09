@@ -99,9 +99,9 @@
   >
     {#each TIME_RANGE_OPTIONS as option}
       {#if option.value === 'custom' && customRange}
-        <option value={option.value} style="background: #2c2c2e; color: #ffffff;">{formatCustomLabel()}</option>
+        <option value={option.value} style="background: #18181b; color: #ffffff;">{formatCustomLabel()}</option>
       {:else}
-        <option value={option.value} style="background: #2c2c2e; color: #ffffff;">{option.label}</option>
+        <option value={option.value} style="background: #18181b; color: #ffffff;">{option.label}</option>
       {/if}
     {/each}
   </select>

@@ -13,7 +13,7 @@
   };
 </script>
 
-<div class="bg-bg-card rounded-lg p-6">
+<div class="bg-bg-card rounded-xl p-6">
   <div class="flex items-center gap-2 mb-2">
     <div class="w-2 h-2 rounded-full {colorClasses[color].dot}"></div>
     <span class="text-xs font-medium text-text-secondary uppercase tracking-wider">{label}</span>

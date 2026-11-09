@@ -18,9 +18,9 @@
 
   // Chart colors
   const chartColors = {
-    storage: '#00d9ff',    // Cyan
-    memory: '#a855f7',     // Purple
-    overlay0: '#8e8e93',   // Muted text
+    storage: '#7c9cff',    // Cyan
+    memory: '#a78bfa',     // Purple
+    overlay0: '#8b8b94',   // Muted text
   };
 
   let metrics: PrometheusHealthMetrics | null = null;
@@ -78,8 +78,8 @@
       const ctx = storageChartCanvas.getContext('2d');
       if (ctx) {
         const gradient = ctx.createLinearGradient(0, 0, 0, 128);
-        gradient.addColorStop(0, 'rgba(0, 217, 255, 0.4)');
-        gradient.addColorStop(1, 'rgba(0, 217, 255, 0)');
+        gradient.addColorStop(0, 'rgba(124, 156, 255, 0.4)');
+        gradient.addColorStop(1, 'rgba(124, 156, 255, 0)');
 
         storageChart = new Chart(storageChartCanvas, {
           type: 'line',
@@ -129,8 +129,8 @@
       const ctx = memoryChartCanvas.getContext('2d');
       if (ctx) {
         const gradient = ctx.createLinearGradient(0, 0, 0, 128);
-        gradient.addColorStop(0, 'rgba(168, 85, 247, 0.4)');
-        gradient.addColorStop(1, 'rgba(168, 85, 247, 0)');
+        gradient.addColorStop(0, 'rgba(167, 139, 250, 0.4)');
+        gradient.addColorStop(1, 'rgba(167, 139, 250, 0)');
 
         memoryChart = new Chart(memoryChartCanvas, {
           type: 'line',
@@ -306,12 +306,12 @@
   // Card highlight styles (matching MetricCard)
   const cardHighlights = {
     storage: {
-      glow: 'rgba(0, 217, 255, 0.15)',
-      border: 'rgba(0, 217, 255, 0.4)',
+      glow: 'rgba(124, 156, 255, 0.15)',
+      border: 'rgba(124, 156, 255, 0.4)',
     },
     memory: {
-      glow: 'rgba(168, 85, 247, 0.15)',
-      border: 'rgba(168, 85, 247, 0.4)',
+      glow: 'rgba(167, 139, 250, 0.15)',
+      border: 'rgba(167, 139, 250, 0.4)',
     },
   };
 
@@ -356,7 +356,7 @@
 
   // Get status color
   function getStatusColor(isReady: boolean): string {
-    return isReady ? '#00ff88' : '#ff6b6b';
+    return isReady ? '#34d399' : '#f87171';
   }
 
   // Get health indicator status
@@ -374,11 +374,11 @@
     }
 
     if (issues.length === 0) {
-      return { label: 'Healthy', color: '#00ff88', issues: [] };
+      return { label: 'Healthy', color: '#34d399', issues: [] };
     } else if (issues.length === 1) {
-      return { label: 'Warning', color: '#ffd93d', issues };
+      return { label: 'Warning', color: '#fbbf24', issues };
     } else {
-      return { label: 'Degraded', color: '#ff6b6b', issues };
+      return { label: 'Degraded', color: '#f87171', issues };
     }
   }
 
@@ -457,7 +457,7 @@
     <div class="grid grid-cols-2 gap-3 mb-3">
       <!-- Storage Card (with highlight) -->
       <div
-        class="bg-bg-card rounded-md p-3"
+        class="bg-bg-card rounded-xl p-3"
         style="box-shadow: 0 0 20px {cardHighlights.storage.glow}, inset 0 0 15px {cardHighlights.storage.glow}; border: 1px solid {cardHighlights.storage.border};"
       >
         <div class="flex items-center gap-1.5 mb-2">
@@ -478,7 +478,7 @@
           <div class="h-2 bg-surface-0 rounded-full overflow-hidden mb-2">
             <div
               class="h-full rounded-full transition-all"
-              style="width: {percent}%; background-color: {percent > 80 ? '#ff6b6b' : percent > 60 ? '#ffd93d' : '#00d9ff'}"
+              style="width: {percent}%; background-color: {percent > 80 ? '#f87171' : percent > 60 ? '#fbbf24' : '#7c9cff'}"
             ></div>
           </div>
           <div class="text-xs text-text-muted mb-2">{percent.toFixed(1)}% used</div>
@@ -499,7 +499,7 @@
 
       <!-- Memory Card (with highlight) -->
       <div
-        class="bg-bg-card rounded-md p-3"
+        class="bg-bg-card rounded-xl p-3"
         style="box-shadow: 0 0 20px {cardHighlights.memory.glow}, inset 0 0 15px {cardHighlights.memory.glow}; border: 1px solid {cardHighlights.memory.border};"
       >
         <div class="flex items-center gap-1.5 mb-2">
@@ -539,7 +539,7 @@
     </div>
 
     <!-- Storage Over Time Chart -->
-    <div class="bg-bg-card rounded-md p-3 mb-3">
+    <div class="bg-bg-card rounded-xl p-3 mb-3">
       <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-1.5">
           <div class="w-1.5 h-1.5 rounded-full bg-sky"></div>
@@ -553,7 +553,7 @@
     </div>
 
     <!-- Memory Over Time Chart -->
-    <div class="bg-bg-card rounded-md p-3 mb-3">
+    <div class="bg-bg-card rounded-xl p-3 mb-3">
       <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-1.5">
           <div class="w-1.5 h-1.5 rounded-full bg-mauve"></div>
@@ -569,7 +569,7 @@
     <!-- Second Row: Ingestion & TSDB -->
     <div class="grid grid-cols-2 gap-3 mb-3">
       <!-- Ingestion Card -->
-      <div class="bg-bg-card rounded-md p-3">
+      <div class="bg-bg-card rounded-xl p-3">
         <div class="flex items-center gap-1.5 mb-2">
           <div class="w-1.5 h-1.5 rounded-full bg-green"></div>
           <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Ingestion")}</span>
@@ -593,7 +593,7 @@
       </div>
 
       <!-- Scrape & Retention Card -->
-      <div class="bg-bg-card rounded-md p-3">
+      <div class="bg-bg-card rounded-xl p-3">
         <div class="flex items-center gap-1.5 mb-2">
           <div class="w-1.5 h-1.5 rounded-full bg-peach"></div>
           <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Scraping")}</span>
@@ -630,10 +630,10 @@
 
     <!-- Health Indicators -->
     {@const health = getHealthStatus(metrics)}
-    {@const healthGlow = health.label === 'Healthy' ? 'rgba(0, 255, 136, 0.15)' : 'rgba(255, 107, 107, 0.15)'}
-    {@const healthBorder = health.label === 'Healthy' ? 'rgba(0, 255, 136, 0.4)' : 'rgba(255, 107, 107, 0.4)'}
+    {@const healthGlow = health.label === 'Healthy' ? 'rgba(52, 211, 153, 0.15)' : 'rgba(248, 113, 113, 0.15)'}
+    {@const healthBorder = health.label === 'Healthy' ? 'rgba(52, 211, 153, 0.4)' : 'rgba(248, 113, 113, 0.4)'}
     <div
-      class="bg-bg-card rounded-md p-3"
+      class="bg-bg-card rounded-xl p-3"
       style="box-shadow: 0 0 20px {healthGlow}, inset 0 0 15px {healthGlow}; border: 1px solid {healthBorder};"
     >
       <div class="flex items-center justify-between mb-3">
@@ -673,7 +673,7 @@
 
         <!-- WAL Health -->
         <div class="text-center">
-          <div class="text-lg font-bold" style="color: {metrics.walCorruptions === 0 ? '#00ff88' : '#ff6b6b'}">
+          <div class="text-lg font-bold" style="color: {metrics.walCorruptions === 0 ? '#34d399' : '#f87171'}">
             {metrics.walCorruptions === 0 ? 'OK' : metrics.walCorruptions}
           </div>
           <div class="text-xs text-text-muted">{$tx("WAL Health")}</div>
@@ -682,7 +682,7 @@
 
         <!-- Config Status -->
         <div class="text-center">
-          <div class="text-lg font-bold" style="color: {metrics.configReloadSuccess ? '#00ff88' : '#ff6b6b'}">
+          <div class="text-lg font-bold" style="color: {metrics.configReloadSuccess ? '#34d399' : '#f87171'}">
             {metrics.configReloadSuccess ? 'OK' : 'Failed'}
           </div>
           <div class="text-xs text-text-muted">{$tx("Config")}</div>

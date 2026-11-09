@@ -18,20 +18,20 @@
 
   // macOS dark theme colors (matching Swift version)
   const colors = {
-    green: '#00ff88',     // Bright green for positive
-    sky: '#00d9ff',       // Cyan (primary accent)
-    mauve: '#a855f7',     // Purple
-    peach: '#ffb347',     // Orange
-    pink: '#ff6b9d',
-    yellow: '#ffd93d',
-    red: '#ff6b6b',       // Softer red
-    blue: '#007aff',      // macOS blue
-    teal: '#00d9ff',      // Teal/Cyan
-    surface0: '#2c2c2e',  // Card background
-    surface1: '#3a3a3c',  // Hover state
-    overlay0: '#8e8e93',  // Muted text
+    green: '#34d399',     // Bright green for positive
+    sky: '#7c9cff',       // Cyan (primary accent)
+    mauve: '#a78bfa',     // Purple
+    peach: '#fb923c',     // Orange
+    pink: '#f472b6',
+    yellow: '#fbbf24',
+    red: '#f87171',       // Softer red
+    blue: '#5b8def',      // macOS blue
+    teal: '#7c9cff',      // Teal/Cyan
+    surface0: '#18181b',  // Card background
+    surface1: '#222227',  // Hover state
+    overlay0: '#8b8b94',  // Muted text
     text: '#ffffff',
-    subtext1: '#e5e5e7',
+    subtext1: '#d4d4d8',
   };
 
   Chart.register(...registerables);
@@ -148,8 +148,8 @@
       const ctx = tokensOverTimeCanvas.getContext('2d');
       if (ctx) {
         const gradient = ctx.createLinearGradient(0, 0, 0, 160);
-        gradient.addColorStop(0, 'rgba(0, 217, 255, 0.4)');   // Cyan accent
-        gradient.addColorStop(1, 'rgba(0, 217, 255, 0)');
+        gradient.addColorStop(0, 'rgba(124, 156, 255, 0.4)');   // Cyan accent
+        gradient.addColorStop(1, 'rgba(124, 156, 255, 0)');
 
         // Backend returns rate per step via rate()
         // Compute cumulative sum then scale to match total (matching Swift app)
@@ -280,7 +280,7 @@
     </div>
 
     <!-- Total Tokens Over Time -->
-    <div class="bg-bg-card rounded-md p-4 mb-4">
+    <div class="bg-bg-card rounded-xl p-4 mb-4">
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Total Tokens Over Time")}</span>
         <span class="text-xs text-text-muted">{$tx(getTimeRangeLabel($timeRangeStore))}</span>
@@ -289,7 +289,7 @@
     </div>
 
     <!-- Tokens By Model -->
-    <div class="bg-bg-card rounded-md p-4">
+    <div class="bg-bg-card rounded-xl p-4">
       <div class="mb-3 text-center">
         <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Tokens By Model")}</span>
         <span class="text-xs text-text-muted ml-2">{$tx("breakdown")}</span>

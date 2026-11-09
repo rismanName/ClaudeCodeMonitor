@@ -6,6 +6,7 @@
   import { settings } from '$lib/stores/settings';
   import { formatCost } from '$lib/format';
   import { t } from '$lib/i18n';
+  import { setAlert, clearAlert } from '$lib/stores';
 
   interface CostSpike { isSpike: boolean; lastHourUsd: number; avgHourlyUsd: number }
 
@@ -46,6 +47,17 @@
     try { localStorage.setItem('spike-dismissed', dismissedDay); } catch { /* ignore */ }
   }
 
+  $: if (spike?.isSpike && dismissedDay !== today()) {
+    setAlert({
+      id: 'spike',
+      severity: 'warn',
+      text: $t('spike.msg', { last: $formatCost(spike.lastHourUsd), avg: $formatCost(spike.avgHourlyUsd) }),
+      onDismiss: dismiss,
+    });
+  } else {
+    clearAlert('spike');
+  }
+
   onMount(() => {
     try { dismissedDay = localStorage.getItem('spike-dismissed') ?? ''; } catch { /* ignore */ }
     refresh();
@@ -53,10 +65,3 @@
   });
   onDestroy(() => timer && clearInterval(timer));
 </script>
-
-{#if spike?.isSpike && dismissedDay !== today()}
-  <div class="mb-3 flex items-center justify-between rounded-md border border-peach/50 bg-peach/10 px-3 py-2 text-xs text-peach">
-    <span>{$t('spike.msg', { last: $formatCost(spike.lastHourUsd), avg: $formatCost(spike.avgHourlyUsd) })}</span>
-    <button class="ml-3 underline" on:click={dismiss}>{$t('stack.dismiss')}</button>
-  </div>
-{/if}

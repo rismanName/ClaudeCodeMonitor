@@ -10,7 +10,7 @@
 
   Chart.register(...registerables);
 
-  const colors = ['#a855f7', '#00d9ff', '#00ff88', '#ff8c42', '#ec4899'];
+  const colors = ['#a78bfa', '#7c9cff', '#34d399', '#ff8c42', '#ec4899'];
 
   $: if (chart && data) {
     chart.data.labels = data.map((m) => m.model);

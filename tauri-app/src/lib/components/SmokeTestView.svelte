@@ -150,7 +150,7 @@
 
 <div class="space-y-4">
   <!-- Header -->
-  <div class="bg-bg-card rounded-lg p-4">
+  <div class="bg-bg-card rounded-xl p-4">
     <div class="flex items-start justify-between">
       <div>
         <div class="flex items-center gap-2 mb-1">
@@ -174,7 +174,7 @@
   </div>
 
   <!-- Test Results -->
-  <div class="bg-bg-card rounded-lg p-4">
+  <div class="bg-bg-card rounded-xl p-4">
     <div class="flex items-center gap-3 mb-4">
       <div class="h-px flex-1 bg-border-secondary"></div>
       <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Test Results")}</span>
@@ -185,7 +185,7 @@
         <div
           class="flex items-center justify-between px-3 py-3 rounded-lg transition-all"
           class:hover:bg-bg-card-hover={test.status !== 'passed'}
-          style={test.status === 'passed' ? 'box-shadow: 0 0 15px rgba(0, 255, 136, 0.15), inset 0 0 10px rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.3);' : ''}
+          style={test.status === 'passed' ? 'box-shadow: 0 0 15px rgba(52, 211, 153, 0.15), inset 0 0 10px rgba(52, 211, 153, 0.05); border: 1px solid rgba(52, 211, 153, 0.3);' : ''}
         >
           <div class="flex items-center gap-3">
             {#if test.status === 'pending'}
@@ -197,7 +197,7 @@
                 <div class="w-2 h-2 rounded-full bg-yellow"></div>
               </div>
             {:else if test.status === 'passed'}
-              <div class="w-6 h-6 rounded-full bg-accent-green flex items-center justify-center shadow-[0_0_10px_rgba(0,255,136,0.5)]">
+              <div class="w-6 h-6 rounded-full bg-accent-green flex items-center justify-center shadow-[0_0_10px_rgba(52, 211, 153,0.5)]">
                 <svg class="w-4 h-4 text-crust" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                 </svg>
@@ -224,7 +224,7 @@
 
   <!-- Discovered Metrics -->
   {#if discoveredMetrics.length > 0}
-    <div class="bg-bg-card rounded-lg p-4">
+    <div class="bg-bg-card rounded-xl p-4">
       <div class="flex items-center gap-3 mb-4">
         <div class="h-px flex-1 bg-border-secondary"></div>
         <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Discovered Metrics")}</span>
@@ -256,7 +256,7 @@
   {/if}
 
   <!-- Documentation Links -->
-  <div class="bg-bg-card rounded-lg p-4">
+  <div class="bg-bg-card rounded-xl p-4">
     <div class="flex items-center gap-3 mb-4">
       <div class="h-px flex-1 bg-border-secondary"></div>
       <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Documentation")}</span>

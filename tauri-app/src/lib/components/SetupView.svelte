@@ -1,20 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { invoke } from '@tauri-apps/api/core';
-  import { isEnabled as isAutostartEnabled, enable as enableAutostart } from '@tauri-apps/plugin-autostart';
   import { ViewHeader } from '$lib/components';
   import { settings } from '$lib/stores/settings';
+  import { onboardingOpen } from '$lib/stores';
   import { t } from '$lib/i18n';
   import type { TranslationKey } from '$lib/i18n';
-
-  interface SetupStatus {
-    engineFound: boolean;
-    engineRunning: boolean;
-    prometheusUp: boolean;
-    otlpUp: boolean;
-    claudeDirExists: boolean;
-    statsCacheExists: boolean;
-  }
+  import { loadSetup, fixStack as runFixStack, fixTelemetry as runFixTelemetry, fixAutostart as runFixAutostart } from '$lib/setup';
+  import type { SetupStatus } from '$lib/setup';
 
   let status: SetupStatus | null = null;
   let telemetryOn: boolean | null = null;
@@ -23,33 +15,26 @@
   let message = '';
 
   async function refresh() {
-    try { status = await invoke<SetupStatus>('get_setup_status'); } catch { status = null; }
-    try { telemetryOn = (await invoke<{ enabled: boolean }>('get_telemetry_status')).enabled; } catch { telemetryOn = null; }
-    try { autostartOn = await isAutostartEnabled(); } catch { autostartOn = null; }
+    ({ status, telemetryOn, autostartOn } = await loadSetup());
   }
 
   async function fixTelemetry() {
     busy = 'telemetry';
-    message = '';
-    try { await invoke('enable_claude_telemetry'); } catch (e) { message = String(e); }
+    message = await runFixTelemetry();
     busy = '';
     refresh();
   }
 
   async function fixStack() {
     busy = 'stack';
-    message = '';
-    try {
-      const r = await invoke<{ state: string; code: string; detail: string }>('ensure_monitoring_stack', { composeDir: $settings.composeDir || null });
-      if (r.state === 'error') message = `${$t(`stack.error.${r.code}` as TranslationKey)}${r.detail ? ` (${r.detail})` : ''}`;
-    } catch (e) { message = String(e); }
+    message = await runFixStack($settings.composeDir, (code) => $t(`stack.error.${code}` as TranslationKey));
     busy = '';
     refresh();
   }
 
   async function fixAutostart() {
     busy = 'autostart';
-    try { await enableAutostart(); } catch (e) { message = String(e); }
+    message = await runFixAutostart();
     busy = '';
     refresh();
   }
@@ -77,6 +62,7 @@
 <div>
   <ViewHeader category="summary" title={$t('nav.setup')} subtitle={$t('nav.setup.desc')}>
     <svelte:fragment slot="actions">
+      <button on:click={() => onboardingOpen.set(true)} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover">{$t('onb.rerun')}</button>
       <button on:click={refresh} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover">{$t('setup.recheck')}</button>
     </svelte:fragment>
   </ViewHeader>
@@ -86,7 +72,7 @@
       {missingRequired === 0 ? $t('setup.allGood') : $t('setup.missing', { n: missingRequired })}
     </div>
 
-    <div class="bg-bg-card rounded-md divide-y divide-border-secondary">
+    <div class="bg-bg-card rounded-xl divide-y divide-border-secondary">
       {#each rows as row}
         <div class="flex items-center gap-3 px-4 py-3">
           <span class="w-5 text-center font-bold {row.ok ? 'text-green' : row.ok === false ? (row.required ? 'text-red' : 'text-peach') : 'text-text-muted'}">

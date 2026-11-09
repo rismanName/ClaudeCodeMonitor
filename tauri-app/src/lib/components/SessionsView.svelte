@@ -1,11 +1,11 @@
 <script lang="ts">
   import { tx } from '$lib/i18n';
   import { formatCost as fmt } from '$lib/format';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { SessionDetailModal, TimeRangePicker, ViewHeader } from '$lib/components';
   import { settings } from '$lib/stores/settings';
-  import { timeRange as timeRangeStore, sessionDateFilter } from '$lib/stores';
+  import { timeRange as timeRangeStore, sessionDateFilter, sessionProjectFilter, drillOrigin, requestedView } from '$lib/stores';
   import { t } from '$lib/i18n';
   import type { SessionsData, SessionMetrics, TimeRange } from '$lib/types';
 
@@ -109,6 +109,7 @@
   $: sortedSessions = data?.sessions
     .filter(s => s.totalTokens > 0)
     .filter(s => !$sessionDateFilter || sessionDay(s.timestamp) === $sessionDateFilter)
+    .filter(s => !$sessionProjectFilter || (s.projectPath ?? s.project) === $sessionProjectFilter.key)
     .sort((a, b) => {
       switch (sortOption) {
         case 'cost_high': return b.totalCostUsd - a.totalCostUsd;
@@ -124,7 +125,30 @@
     .filter(p => p.totalTokens > 0)
     .sort((a, b) => b.totalCostUsd - a.totalCostUsd) ?? [];
 
-  onMount(fetchSessions);
+  // Drill-down navigation: leave the filtered list and go back to where the user came from.
+  function goBack() {
+    const origin = $drillOrigin;
+    if (origin) requestedView.set(origin);
+    else sessionProjectFilter.set(null);
+  }
+
+  function onKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && $sessionProjectFilter && !selectedSession) {
+      e.preventDefault();
+      goBack();
+    }
+  }
+
+  onMount(() => {
+    fetchSessions();
+    window.addEventListener('keydown', onKeydown);
+  });
+  onDestroy(() => {
+    window.removeEventListener('keydown', onKeydown);
+    // The project filter is transient to the drill-down: never leak it into later visits.
+    sessionProjectFilter.set(null);
+    drillOrigin.set(null);
+  });
 </script>
 
 <div>
@@ -133,6 +157,18 @@
       <TimeRangePicker value={$timeRangeStore} onChange={handleTimeRangeChange} />
     </svelte:fragment>
   </ViewHeader>
+
+  {#if $sessionProjectFilter}
+    <div class="mb-3 flex items-center gap-3 text-xs">
+      {#if $drillOrigin}
+        <button class="text-accent-primary hover:underline" on:click={goBack}>{$t('sessions.backTo', { v: $t('nav.projects') })}</button>
+      {/if}
+      <span class="inline-flex items-center gap-2 rounded-md border border-border-secondary bg-bg-card px-2 py-1 text-text-secondary">
+        <span>{$t('sessions.projectFilter', { p: $sessionProjectFilter.label })}</span>
+        <button class="underline" on:click={() => { sessionProjectFilter.set(null); drillOrigin.set(null); }}>{$t('sessions.clearFilter')}</button>
+      </span>
+    </div>
+  {/if}
 
   {#if $sessionDateFilter}
     <div class="mb-3 inline-flex items-center gap-2 rounded-md border border-border-secondary bg-bg-card px-2 py-1 text-xs text-text-secondary">
@@ -146,7 +182,7 @@
       <div class="text-xs text-text-muted">{$tx("Loading sessions...")}</div>
     </div>
   {:else if error}
-    <div class="bg-bg-card rounded-md p-4 text-center">
+    <div class="bg-bg-card rounded-xl p-4 text-center">
       <div class="text-xs text-text-secondary mb-1">{$tx("Unable to load sessions")}</div>
       <div class="text-xs text-text-muted">{error}</div>
     </div>
@@ -156,7 +192,7 @@
       <div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">{$tx("Top Sessions")}</div>
       <div class="grid grid-cols-3 gap-3">
         <!-- Highest Cost -->
-        <div class="bg-bg-card rounded-lg p-4 border border-accent-green/30 shadow-[0_0_12px_rgba(0,255,136,0.15)]">
+        <div class="bg-bg-card rounded-xl p-4 border border-accent-green/30 shadow-[0_0_12px_rgba(52, 211, 153,0.15)]">
           <div class="flex items-center gap-1.5 mb-2">
             <div class="w-1.5 h-1.5 rounded-full bg-accent-green"></div>
             <span class="text-xs text-text-muted uppercase tracking-wide">{$tx("Highest Cost")}</span>
@@ -180,7 +216,7 @@
         </div>
 
         <!-- Most Tokens -->
-        <div class="bg-bg-card rounded-lg p-4 border border-sky/30 shadow-[0_0_12px_rgba(0,217,255,0.15)]">
+        <div class="bg-bg-card rounded-xl p-4 border border-sky/30 shadow-[0_0_12px_rgba(124, 156, 255,0.15)]">
           <div class="flex items-center gap-1.5 mb-2">
             <div class="w-1.5 h-1.5 rounded-full bg-sky"></div>
             <span class="text-xs text-text-muted uppercase tracking-wide">{$tx("Most Tokens")}</span>
@@ -204,7 +240,7 @@
         </div>
 
         <!-- Longest Duration -->
-        <div class="bg-bg-card rounded-lg p-4 border border-peach/30 shadow-[0_0_12px_rgba(255,179,71,0.15)]">
+        <div class="bg-bg-card rounded-xl p-4 border border-peach/30 shadow-[0_0_12px_rgba(251, 146, 60,0.15)]">
           <div class="flex items-center gap-1.5 mb-2">
             <div class="w-1.5 h-1.5 rounded-full bg-peach"></div>
             <span class="text-xs text-text-muted uppercase tracking-wide">{$tx("Longest Duration")}</span>
@@ -236,7 +272,7 @@
           <div class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Cost by Project")}</div>
           <span class="text-xs text-text-muted">{sortedProjects.length} projects</span>
         </div>
-        <div class="bg-bg-card rounded-lg overflow-hidden border border-border-primary">
+        <div class="bg-bg-card rounded-xl overflow-hidden border border-border-primary">
           <table class="w-full border-collapse">
             <thead>
               <tr class="border-b border-border-primary bg-bg-secondary/50">
@@ -307,7 +343,7 @@
           </select>
         </div>
       </div>
-      <div class="bg-bg-card rounded-lg overflow-hidden border border-border-primary">
+      <div class="bg-bg-card rounded-xl overflow-hidden border border-border-primary">
         <table class="w-full border-collapse">
           <thead>
             <tr class="border-b border-border-primary bg-bg-secondary/50">

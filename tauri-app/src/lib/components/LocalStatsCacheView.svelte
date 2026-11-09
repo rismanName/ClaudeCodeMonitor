@@ -20,18 +20,18 @@
 
   // macOS dark theme colors (matching Swift version)
   const colors = {
-    green: '#00ff88',     // Bright green for positive
-    sky: '#00d9ff',       // Cyan (primary accent)
-    mauve: '#a855f7',     // Purple
-    peach: '#ffb347',     // Orange
-    pink: '#ff6b9d',
-    yellow: '#ffd93d',
-    red: '#ff6b6b',       // Softer red
-    blue: '#007aff',      // macOS blue
-    teal: '#00d9ff',      // Teal/Cyan
-    surface0: '#2c2c2e',  // Card background
-    surface1: '#3a3a3c',  // Hover state
-    overlay0: '#8e8e93',  // Muted text
+    green: '#34d399',     // Bright green for positive
+    sky: '#7c9cff',       // Cyan (primary accent)
+    mauve: '#a78bfa',     // Purple
+    peach: '#fb923c',     // Orange
+    pink: '#f472b6',
+    yellow: '#fbbf24',
+    red: '#f87171',       // Softer red
+    blue: '#5b8def',      // macOS blue
+    teal: '#7c9cff',      // Teal/Cyan
+    surface0: '#18181b',  // Card background
+    surface1: '#222227',  // Hover state
+    overlay0: '#8b8b94',  // Muted text
   };
 
   Chart.register(...registerables);
@@ -214,7 +214,7 @@
       <div class="text-xs text-text-muted">{$tx("Loading stats cache...")}</div>
     </div>
   {:else if error}
-    <div class="bg-bg-card rounded-md p-6">
+    <div class="bg-bg-card rounded-xl p-6">
       <div class="text-base font-semibold text-text-primary mb-2">{$tx("Stats Not Available Yet")}</div>
       <p class="text-sm text-text-secondary mb-4">
         Claude Code hasn't generated usage statistics yet. This file is created automatically by Claude Code in the background — there's no manual way to trigger it.
@@ -234,7 +234,7 @@
     </div>
   {:else if data}
     <!-- Info Banner -->
-    <div class="bg-bg-card rounded-md px-3 py-2 mb-3 flex items-center gap-2">
+    <div class="bg-bg-card rounded-xl px-3 py-2 mb-3 flex items-center gap-2">
       <span class="text-sm">ℹ️</span>
       <span class="text-xs text-text-muted">Data covers approximately the last 30 days. Source: Claude Code internal cache</span>
     </div>
@@ -254,7 +254,7 @@
     </div>
 
     <!-- Daily Activity Chart -->
-    <div class="bg-bg-card rounded-md p-3 mb-3">
+    <div class="bg-bg-card rounded-xl p-3 mb-3">
       <div class="flex items-center justify-between mb-2">
         <div class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Daily Activity")}</div>
         <span class="text-xs text-text-muted">{$tx("Last 30 days")}</span>
@@ -265,7 +265,7 @@
     <ActivityHeatmap points={data.dailyActivity} on:select={(e) => { sessionDateFilter.set(e.detail); requestedView.set('sessions'); }} />
 
     <!-- Token Usage by Model -->
-    <div class="bg-bg-card rounded-md p-4 mb-3">
+    <div class="bg-bg-card rounded-xl p-4 mb-3">
       <div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-3">{$tx("Token Usage by Model")}</div>
       <div class="flex items-center gap-5">
         <div class="w-30 h-30 flex-shrink-0" style="width: 120px; height: 120px;">
@@ -285,7 +285,7 @@
     </div>
 
     <!-- Activity by Hour -->
-    <div class="bg-bg-card rounded-md p-3">
+    <div class="bg-bg-card rounded-xl p-3">
       <div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">{$tx("Activity by Hour")}</div>
       <div class="h-28"><canvas bind:this={hourlyChartCanvas}></canvas></div>
     </div>

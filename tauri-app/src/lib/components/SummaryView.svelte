@@ -7,7 +7,7 @@
   import { settings } from '$lib/stores/settings';
   import { t, tx } from '$lib/i18n';
   import { formatCost as fmt } from '$lib/format';
-  import { formatCostAxis } from '$lib/format';
+  import { formatCostAxis, formatModelName } from '$lib/format';
   import { isConnected, lastUpdated, timeRange as timeRangeStore, customTimeRange as customTimeRangeStore, totalCost } from '$lib/stores';
   import type { DashboardMetrics, TimeRange, CustomTimeRange, PreviousPeriod } from '$lib/types';
 
@@ -22,20 +22,20 @@
 
   // macOS dark theme colors (matching Swift version)
   const colors = {
-    green: '#00ff88',     // Bright green for positive
-    sky: '#00d9ff',       // Cyan (primary accent)
-    mauve: '#a855f7',     // Purple
-    peach: '#ffb347',     // Orange
-    pink: '#ff6b9d',
-    yellow: '#ffd93d',
-    red: '#ff6b6b',       // Softer red
-    blue: '#007aff',      // macOS blue
-    teal: '#00d9ff',      // Teal/Cyan
-    surface0: '#2c2c2e',  // Card background
-    surface1: '#3a3a3c',  // Hover state
-    overlay0: '#8e8e93',  // Muted text
+    green: '#34d399',     // Bright green for positive
+    sky: '#7c9cff',       // Cyan (primary accent)
+    mauve: '#a78bfa',     // Purple
+    peach: '#fb923c',     // Orange
+    pink: '#f472b6',
+    yellow: '#fbbf24',
+    red: '#f87171',       // Softer red
+    blue: '#5b8def',      // macOS blue
+    teal: '#7c9cff',      // Teal/Cyan
+    surface0: '#18181b',  // Card background
+    surface1: '#222227',  // Hover state
+    overlay0: '#8b8b94',  // Muted text
     text: '#ffffff',
-    subtext1: '#e5e5e7',
+    subtext1: '#d4d4d8',
   };
 
   Chart.register(...registerables);
@@ -141,30 +141,12 @@
       lastUpdated.set(new Date());
       void fetchPrevious();
 
-      // Update system tray with cost and connection status
-      try {
-        await invoke('update_tray_stats', {
-          totalCost: metrics.totalCostUsd,
-          isConnected: true,
-        });
-      } catch {
-        // Silently ignore tray update errors (e.g., on Windows where title may not be supported)
-      }
 
       await tick();
       updateCharts();
     } catch (e) {
       error = e as string;
       isConnected.set(false);
-      // Update tray to show disconnected status
-      try {
-        await invoke('update_tray_stats', {
-          totalCost: 0,
-          isConnected: false,
-        });
-      } catch {
-        // Silently ignore tray update errors
-      }
     } finally {
       loading = false;
     }
@@ -234,28 +216,6 @@
     return metrics.totalCostUsd * proportion;
   }
 
-  function formatModelName(modelName: string): string {
-    // Extract friendly name like "Haiku 4.5" or "Opus 4.5" from full model name
-    // Model names look like: "claude-3-5-haiku-20241022" or "claude-opus-4-5-20251101"
-    const lower = modelName.toLowerCase();
-
-    // Extract version like "3-5" or "4-5" and convert to "3.5" or "4.5"
-    const versionMatch = lower.match(/(\d)-(\d)/);
-    const version = versionMatch ? `${versionMatch[1]}.${versionMatch[2]}` : '';
-
-    if (lower.includes('haiku')) {
-      return version ? `Haiku ${version}` : 'Haiku';
-    }
-    if (lower.includes('opus')) {
-      return version ? `Opus ${version}` : 'Opus';
-    }
-    if (lower.includes('sonnet')) {
-      return version ? `Sonnet ${version}` : 'Sonnet';
-    }
-    // Fallback: return last part of model name
-    return modelName.split('.').pop() || modelName;
-  }
-
   // Consolidate models by friendly name
   function getConsolidatedModels(): { model: string; tokens: number }[] {
     if (!metrics) return [];
@@ -286,8 +246,8 @@
       const ctx = costChartCanvas.getContext('2d');
       if (ctx) {
         const gradient = ctx.createLinearGradient(0, 0, 0, 128);
-        gradient.addColorStop(0, 'rgba(0, 217, 255, 0.4)');   // Cyan accent
-        gradient.addColorStop(1, 'rgba(0, 217, 255, 0)');
+        gradient.addColorStop(0, 'rgba(124, 156, 255, 0.4)');   // Cyan accent
+        gradient.addColorStop(1, 'rgba(124, 156, 255, 0)');
 
         // Backend returns rate per step via rate()
         // Compute cumulative sum then scale to match total (matching Swift app)
@@ -405,7 +365,7 @@
   <div class="flex items-center justify-between mb-4">
     <!-- Left: Dashboard title -->
     <div class="flex-shrink-0">
-      <h1 class="text-lg font-semibold text-text-primary">{$t('dash.title')}</h1>
+      <h1 class="text-2xl font-semibold tracking-tight text-text-primary">{$t('dash.title')}</h1>
       <p class="text-xs text-text-muted">{$tx(getTimeRangeLabel($timeRangeStore))}</p>
     </div>
 
@@ -480,7 +440,7 @@
     </div>
 
     <!-- Total Cost Over Period Chart -->
-    <div class="bg-bg-card rounded-md p-4 mb-4">
+    <div class="bg-bg-card rounded-xl p-4 mb-4">
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$t('dash.costOverTime')}</span>
         <span class="text-xs text-text-muted">{$tx(getTimeRangeLabel($timeRangeStore))}</span>
@@ -491,7 +451,7 @@
     </div>
 
     <!-- Cost By Model Section -->
-    <div class="bg-bg-card rounded-md p-4">
+    <div class="bg-bg-card rounded-xl p-4">
       <div class="mb-3 text-center">
         <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$t('dash.costByModel')}</span>
         <span class="text-xs text-text-muted ml-2">breakdown</span>

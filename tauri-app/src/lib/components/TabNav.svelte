@@ -1,26 +1,17 @@
 <script lang="ts">
-  export let activeTab: 'dashboard' | 'insights' | 'sessions';
-  export let onTabChange: (tab: 'dashboard' | 'insights' | 'sessions') => void;
-
-  const tabs = [
-    { id: 'dashboard' as const, label: 'Dashboard' },
-    { id: 'insights' as const, label: 'Insights' },
-    { id: 'sessions' as const, label: 'Sessions' },
-  ];
+  export let tabs: { id: string; label: string }[];
+  export let active: string;
+  export let onChange: (id: string) => void;
 </script>
 
-<nav class="flex border-b border-gray-700 mb-6">
+<nav class="flex gap-1 border-b border-border-secondary mb-5">
   {#each tabs as tab}
     <button
-      class="px-4 py-2 text-sm font-medium transition-colors relative {activeTab === tab.id
-        ? 'text-white'
-        : 'text-gray-400 hover:text-gray-200'}"
-      on:click={() => onTabChange(tab.id)}
+      class="px-3 py-2 text-sm transition-colors relative {active === tab.id ? 'text-text-primary font-medium' : 'text-text-muted hover:text-text-primary'}"
+      on:click={() => onChange(tab.id)}
     >
       {tab.label}
-      {#if activeTab === tab.id}
-        <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-accent"></div>
-      {/if}
+      {#if active === tab.id}<div class="absolute -bottom-px left-0 right-0 h-0.5 bg-accent-primary"></div>{/if}
     </button>
   {/each}
 </nav>

@@ -17,11 +17,12 @@
 
   async function refresh() {
     try {
-      const d = await invoke<{ sessions: { totalCostUsd: number }[] }>('get_sessions_data', {
-        timeRange: '24h',
+      // Total from Prometheus (not summed from sessions, which only lists sessions present in history.jsonl).
+      const m = await invoke<{ totalCostUsd: number }>('get_dashboard_metrics', {
+        timeRange: '1d',
         prometheusUrl: $settings.prometheusUrl,
       });
-      spentUsd = d.sessions.reduce((s, x) => s + (x.totalCostUsd || 0), 0);
+      spentUsd = m.totalCostUsd || 0;
     } catch { /* keep last value */ }
     try {
       spike = await invoke<CostSpike>('get_cost_spike', { prometheusUrl: $settings.prometheusUrl });
@@ -52,7 +53,7 @@
 <div>
   <ViewHeader category="summary" title={$t('nav.budget')} subtitle={$t('nav.budget.desc')} />
 
-  <div class="bg-bg-card rounded-md p-4 mb-4">
+  <div class="bg-bg-card rounded-xl p-4 mb-4">
     <div class="flex items-center justify-between mb-2">
       <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$t('budget.title')}</span>
       {#if budget > 0}<span class="text-xs text-text-muted">{pct.toFixed(0)}%</span>{/if}
@@ -76,7 +77,7 @@
 
   <UsageWindowCard />
 
-  <div class="bg-bg-card rounded-md p-4">
+  <div class="bg-bg-card rounded-xl p-4">
     <div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-3">{$t('budget.limits')}</div>
     <div class="grid grid-cols-2 gap-3 mb-3">
       <div>

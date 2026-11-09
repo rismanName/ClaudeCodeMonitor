@@ -12,11 +12,26 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Claude Code Monitor",
         "width": 800,
         "height": 800,
         "minWidth": 800,
         "minHeight": 600
+      },
+      {
+        "label": "popover",
+        "title": "Claude Code Monitor",
+        "url": "/popover",
+        "width": 340,
+        "height": 640,
+        "visible": false,
+        "focus": false,
+        "decorations": false,
+        "resizable": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": true
       }
     ],
     "security": {

@@ -12,4 +12,10 @@ export const lastUpdated = writable<Date | null>(null);
 export const sessionDateFilter = writable<string | null>(null);
 /** One-shot navigation request consumed by +page.svelte. */
 export const requestedView = writable<string | null>(null);
+/** Drill-down from Projects: Session History shows only this project's sessions (key = projectPath ?? project name). */
+export const sessionProjectFilter = writable<{ key: string; label: string } | null>(null);
+/** View id to return to (Esc / back link) after a drill-down; set together with sessionProjectFilter. */
+export const drillOrigin = writable<string | null>(null);
 export const totalCost = writable<number>(0);
+/** First-run setup wizard visibility (opened automatically on launch, or from Setup Status). */
+export const onboardingOpen = writable(false);

@@ -44,14 +44,14 @@
 
   const shades = [
     'rgba(142, 142, 147, 0.15)',
-    'rgba(0, 255, 136, 0.25)',
-    'rgba(0, 255, 136, 0.45)',
-    'rgba(0, 255, 136, 0.7)',
-    'rgba(0, 255, 136, 1)',
+    'rgba(52, 211, 153, 0.25)',
+    'rgba(52, 211, 153, 0.45)',
+    'rgba(52, 211, 153, 0.7)',
+    'rgba(52, 211, 153, 1)',
   ];
 </script>
 
-<div class="bg-bg-card rounded-md p-3 mb-3">
+<div class="bg-bg-card rounded-xl p-3 mb-3">
   <div class="flex items-center justify-between mb-2">
     <div class="text-xs font-medium text-text-muted uppercase tracking-wider">{$t('heat.title')}</div>
     <span class="text-xs text-text-muted">{$t('heat.weeks', { n: weeks })}</span>

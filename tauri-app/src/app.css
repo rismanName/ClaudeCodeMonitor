@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /*
- * Design System: macOS Dark
+ * Design System: Graphite
  * A neutral dark theme matching the Swift version
  * Neutral grays with cyan accent
  */
@@ -20,31 +20,31 @@
   -moz-osx-font-smoothing: grayscale;
 
   /* Base colors - macOS dark */
-  --color-base: #1c1c1e;       /* Main background */
-  --color-mantle: #161618;     /* Darker background */
-  --color-crust: #0d0d0f;      /* Darkest background */
+  --color-base: #111113;       /* Main background */
+  --color-mantle: #0c0c0e;     /* Darker background */
+  --color-crust: #08080a;      /* Darkest background */
 
   /* Surface colors */
-  --color-surface-0: #2c2c2e;  /* Card background */
-  --color-surface-1: #3a3a3c;  /* Hover state */
-  --color-surface-2: #48484a;  /* Active state */
+  --color-surface-0: #18181b;  /* Card background */
+  --color-surface-1: #222227;  /* Hover state */
+  --color-surface-2: #303037;  /* Active state */
 
   /* Text colors */
   --color-text: #ffffff;       /* Primary text */
-  --color-subtext-1: #e5e5e7;  /* Secondary text */
-  --color-subtext-0: #c7c7cc;  /* Tertiary text */
-  --color-overlay-0: #8e8e93;  /* Muted text */
+  --color-subtext-1: #d4d4d8;  /* Secondary text */
+  --color-subtext-0: #a1a1aa;  /* Tertiary text */
+  --color-overlay-0: #8b8b94;  /* Muted text */
 
   /* Accent colors - macOS style */
-  --color-blue: #007aff;       /* macOS blue */
-  --color-green: #00d9ff;      /* Cyan (primary accent) */
-  --color-sky: #00d9ff;        /* Cyan */
-  --color-mauve: #a855f7;      /* Purple */
-  --color-peach: #ffb347;      /* Orange */
-  --color-yellow: #ffd93d;     /* Yellow */
-  --color-red: #ff6b6b;        /* Softer red */
-  --color-teal: #00d9ff;       /* Teal/Cyan */
-  --color-pink: #ff6b9d;       /* Pink */
+  --color-blue: #5b8def;       /* macOS blue */
+  --color-green: #34d399;       /* success */ 
+  --color-sky: #38bdf8;
+  --color-mauve: #a78bfa;      /* Purple */
+  --color-peach: #fb923c;      /* Orange */
+  --color-yellow: #fbbf24;     /* Yellow */
+  --color-red: #f87171;        /* Softer red */
+  --color-teal: #2dd4bf;
+  --color-pink: #f472b6;       /* Pink */
 
   /* Applied to root */
   background-color: var(--color-base);
@@ -80,17 +80,17 @@ body {
 
 /* Selection styling */
 ::selection {
-  background-color: var(--color-mauve);
+  background-color: var(--color-blue);
   color: var(--color-crust);
 }
 
 /* Focus ring styling */
 :focus-visible {
-  outline: 2px solid var(--color-mauve);
+  outline: 2px solid var(--color-blue);
   outline-offset: 2px;
 }
 
-/* Chart.js overrides for Dracula theme */
+/* Chart.js overrides */
 @layer utilities {
   .chart-tooltip {
     background-color: var(--color-surface-0) !important;
@@ -100,4 +100,34 @@ body {
     font-size: 12px !important;
     padding: 8px 12px !important;
   }
+}
+
+/* ---- Graphite look: hairline-bordered cards, tabular figures ---- */
+@layer components {
+  .bg-bg-card {
+    border: 1px solid var(--color-line, #26262b);
+  }
+  button.bg-bg-card,
+  button.bg-bg-card-hover {
+    border-color: var(--color-line, #26262b);
+  }
+}
+
+:root {
+  --color-line: #26262b;
+  --color-accent: #7c9cff;
+}
+
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background-color: rgba(124, 156, 255, 0.35);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }

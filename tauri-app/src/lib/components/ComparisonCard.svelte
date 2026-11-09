@@ -21,7 +21,7 @@
   $: isNegative = data.percentChange !== null && data.percentChange < 0;
 </script>
 
-<div class="bg-bg-card rounded-md p-3 hover:bg-bg-card-hover transition-colors">
+<div class="bg-bg-card rounded-xl p-3 hover:bg-bg-card-hover transition-colors">
   <div class="text-text-muted text-xs uppercase tracking-wider mb-1">{label}</div>
   <div class="text-lg font-bold text-text-primary mb-0.5">{formatValue(data.current)}</div>
   <div class="flex items-center gap-1 text-xs">

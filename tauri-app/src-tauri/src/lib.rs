@@ -13,10 +13,13 @@ mod telemetry;
 mod tray;
 mod usage;
 
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager, State,
+    Manager, PhysicalPosition, Rect, State,
 };
 
 use tray::TrayState;
@@ -39,6 +42,132 @@ fn hide_main(app: &tauri::AppHandle) {
     }
     #[cfg(target_os = "macos")]
     let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+}
+
+/// When the popover last lost focus (ms since epoch). Clicking the tray icon while the popover is open blurs it first,
+/// so without this the same click would hide it and immediately re-open it.
+static POPOVER_HIDDEN_AT: AtomicU64 = AtomicU64::new(0);
+
+fn now_ms() -> u64 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
+}
+
+fn hide_popover(app: &tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window("popover") {
+        let _ = w.hide();
+    }
+    POPOVER_HIDDEN_AT.store(now_ms(), Ordering::Relaxed);
+}
+
+/// While true the popover behaves like a desktop widget: it stays visible (and on top) when it loses focus.
+static POPOVER_PINNED: AtomicBool = AtomicBool::new(false);
+
+/// Screen rectangle of the tray icon, if the OS reports one yet.
+fn tray_rect(app: &tauri::AppHandle) -> Option<Rect> {
+    let state: State<TrayState> = app.state();
+    let guard = state.tray.lock().ok()?;
+    guard.as_ref()?.rect().ok().flatten()
+}
+
+/// Put the popover under the tray icon (`rect`); without a rect, top-right of the primary monitor.
+fn place_popover(app: &tauri::AppHandle, w: &tauri::WebviewWindow, rect: Option<Rect>) {
+    let scale = w.scale_factor().unwrap_or(1.0);
+    let width = w.outer_size().map(|s| s.width as f64).unwrap_or(320.0 * scale);
+    let (x, y) = match rect {
+        Some(rect) => {
+            let pos = rect.position.to_physical::<f64>(scale);
+            let size = rect.size.to_physical::<f64>(scale);
+            ((pos.x + size.width / 2.0 - width / 2.0).max(0.0), pos.y + size.height + 4.0 * scale)
+        }
+        None => match app.primary_monitor().ok().flatten() {
+            Some(m) => (
+                m.position().x as f64 + m.size().width as f64 - width - 16.0 * scale,
+                m.position().y as f64 + 32.0 * scale,
+            ),
+            None => return, // nothing sensible to anchor to: leave the window where it is
+        },
+    };
+    let _ = w.set_position(PhysicalPosition::new(x as i32, y as i32));
+}
+
+/// Toggle the small status window anchored under the tray icon (`rect` is the icon's screen rectangle).
+fn toggle_popover(app: &tauri::AppHandle, rect: Rect) {
+    let Some(w) = app.get_webview_window("popover") else { return };
+    if w.is_visible().unwrap_or(false) {
+        hide_popover(app);
+        return;
+    }
+    if now_ms().saturating_sub(POPOVER_HIDDEN_AT.load(Ordering::Relaxed)) < 250 {
+        return; // this click is the one that just blurred (and hid) the popover
+    }
+    place_popover(app, &w, Some(rect));
+    let _ = w.show();
+    let _ = w.set_focus();
+}
+
+/// Comparable form of a tray rectangle (physical pixels at scale 1), used only to detect that it moved.
+fn rect_key(rect: &Rect) -> (i64, i64, i64, i64) {
+    let p = rect.position.to_physical::<f64>(1.0);
+    let s = rect.size.to_physical::<f64>(1.0);
+    (p.x as i64, p.y as i64, s.width as i64, s.height as i64)
+}
+
+/// Pin/unpin the widget. Pinning shows it immediately and keeps it open until unpinned.
+///
+/// At launch macOS reports the tray icon at a temporary position (even off-screen) and moves it to its real
+/// place several seconds later. So after the first placement keep following the icon until its rectangle has
+/// been stable for ~4 s (or 60 s passed); the widget may live on another display than the primary one.
+#[tauri::command]
+fn set_popover_pinned(app: tauri::AppHandle, pinned: bool) {
+    POPOVER_PINNED.store(pinned, Ordering::Relaxed);
+    if !pinned {
+        return;
+    }
+    let Some(w) = app.get_webview_window("popover") else { return };
+    if w.is_visible().unwrap_or(false) {
+        return;
+    }
+    let initial = tray_rect(&app);
+    place_popover(&app, &w, initial);
+    let _ = w.show();
+
+    std::thread::spawn(move || {
+        let mut last = initial.as_ref().map(rect_key);
+        let mut stable = 0;
+        for _ in 0..120 {
+            std::thread::sleep(std::time::Duration::from_millis(500));
+            if !POPOVER_PINNED.load(Ordering::Relaxed) {
+                return;
+            }
+            let cur = tray_rect(&app);
+            let key = cur.as_ref().map(rect_key);
+            if key != last {
+                if let (Some(rect), Some(w)) = (cur, app.get_webview_window("popover")) {
+                    place_popover(&app, &w, Some(rect));
+                }
+                last = key;
+                stable = 0;
+            } else {
+                stable += 1;
+                if stable >= 8 && key.is_some() {
+                    return;
+                }
+            }
+        }
+    });
+}
+
+/// Popover button: open the full dashboard and dismiss the popover.
+#[tauri::command]
+fn open_dashboard(app: tauri::AppHandle) {
+    hide_popover(&app);
+    show_main(&app);
+}
+
+/// Popover button: quit the whole app.
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+    app.exit(0);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -72,7 +201,7 @@ pub fn run() {
                 .icon(tray_icon)
                 .icon_as_template(true) // monochrome, adapts to light/dark menu bar
                 .menu(&menu)
-                .show_menu_on_left_click(true) // like Docker Desktop: click opens the menu
+                .show_menu_on_left_click(false) // left click opens the status popover; right click shows this menu
                 .title("🔴 --") // Initial placeholder (red = not connected yet)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "quit" => {
@@ -85,10 +214,11 @@ pub fn run() {
                     if let TrayIconEvent::Click {
                         button: MouseButton::Left,
                         button_state: MouseButtonState::Up,
+                        rect,
                         ..
                     } = event
                     {
-                        show_main(tray.app_handle());
+                        toggle_popover(tray.app_handle(), rect);
                     }
                 })
                 .build(app)?;
@@ -98,17 +228,23 @@ pub fn run() {
             if let Ok(mut guard) = tray_state.tray.lock() {
                 *guard = Some(tray);
             }
+            tray::start_poller(app.handle().clone());
 
             Ok(())
         })
         // Closing the window keeps the app alive in the menu bar (quit from the tray menu or Cmd+Q).
-        .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                if window.label() == "main" {
-                    api.prevent_close();
-                    hide_main(window.app_handle());
+        .on_window_event(|window, event| match event {
+            tauri::WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
+                api.prevent_close();
+                hide_main(window.app_handle());
+            }
+            // Popover behaves like a menu: it disappears as soon as it loses focus.
+            tauri::WindowEvent::Focused(false) if window.label() == "popover" => {
+                if !POPOVER_PINNED.load(Ordering::Relaxed) {
+                    hide_popover(window.app_handle());
                 }
             }
+            _ => {}
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_dashboard_metrics,
@@ -119,7 +255,6 @@ pub fn run() {
             insights::get_insights_data,
             insights::get_local_stats_cache,
             sessions::get_sessions_data,
-            tray::update_tray_stats,
             tray::set_tray_alert,
             telemetry::get_telemetry_status,
             telemetry::enable_claude_telemetry,
@@ -134,6 +269,9 @@ pub fn run() {
             export::save_export,
             anomaly::get_cost_spike,
             usage::get_usage_windows,
+            open_dashboard,
+            quit_app,
+            set_popover_pinned,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

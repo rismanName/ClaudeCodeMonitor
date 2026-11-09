@@ -74,7 +74,7 @@
   }
 </script>
 
-<div class="bg-bg-card rounded-md overflow-hidden">
+<div class="bg-bg-card rounded-xl overflow-hidden">
   <table class="w-full">
     <thead>
       <tr class="border-b border-border-secondary">

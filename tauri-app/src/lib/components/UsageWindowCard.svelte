@@ -45,7 +45,7 @@
   onDestroy(() => timer && clearInterval(timer));
 </script>
 
-<div class="bg-bg-card rounded-md p-4 mb-4">
+<div class="bg-bg-card rounded-xl p-4 mb-4">
   <div class="flex items-center justify-between mb-2">
     <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$t('usage.title')}</span>
     {#if usage?.blockActive}

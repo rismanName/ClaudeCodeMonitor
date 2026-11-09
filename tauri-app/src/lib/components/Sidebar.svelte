@@ -5,11 +5,13 @@
   import { isConnected, lastUpdated, totalCost } from '$lib/stores';
   import { settings } from '$lib/stores/settings';
   import { t } from '$lib/i18n';
-  import type { TranslationKey } from '$lib/i18n';
+  import { sections, sectionOf } from '$lib/nav';
 
   export let activeView: string;
-  export let onNavigate: (view: string) => void;
+  /** Receives a section id (the page decides which of its views to show). */
+  export let onNavigate: (sectionId: string) => void;
   export let onOpenSettings: () => void = () => {};
+  export let onOpenPalette: () => void = () => {};
 
   let elapsedSeconds = 0;
   let interval: ReturnType<typeof setInterval>;
@@ -35,55 +37,8 @@
     if (interval) clearInterval(interval);
   });
 
-  // Each tab has a unique accent color for the selected state
-  const tabColors: Record<string, { border: string; glow: string; text: string }> = {
-    'summary': { border: '#00d9ff', glow: 'rgba(0, 217, 255, 0.15)', text: '#00d9ff' },      // Cyan - primary
-    'tokens': { border: '#00ff88', glow: 'rgba(0, 255, 136, 0.15)', text: '#00ff88' },       // Green - performance
-    'insights': { border: '#a855f7', glow: 'rgba(168, 85, 247, 0.15)', text: '#a855f7' },    // Purple - analysis
-    'sessions': { border: '#ff6b9d', glow: 'rgba(255, 107, 157, 0.15)', text: '#ff6b9d' },    // Pink - activity
-    'stats-cache': { border: '#007aff', glow: 'rgba(0, 122, 255, 0.15)', text: '#007aff' },  // Blue - data
-    'prometheus-health': { border: '#ff6b6b', glow: 'rgba(255, 107, 107, 0.15)', text: '#ff6b6b' }, // Red - infrastructure
-    'projects': { border: '#ffd93d', glow: 'rgba(255, 217, 61, 0.15)', text: '#ffd93d' },   // Yellow - projects
-    'budget': { border: '#00ff88', glow: 'rgba(0, 255, 136, 0.15)', text: '#00ff88' },       // Green - money
-    'setup': { border: '#00d9ff', glow: 'rgba(0, 217, 255, 0.15)', text: '#00d9ff' },         // Cyan - onboarding
-    'smoke-test': { border: '#ffb347', glow: 'rgba(255, 179, 71, 0.15)', text: '#ffb347' }, // Orange - developer
-  };
-
-  type NavItem = { id: string; icon: string; label: TranslationKey; desc: TranslationKey };
-  const groups: { title: TranslationKey; items: NavItem[] }[] = [
-    {
-      title: 'nav.prometheus',
-      items: [
-        { id: 'summary', icon: 'grid', label: 'nav.dashboard', desc: 'nav.dashboard.desc' },
-        { id: 'tokens', icon: 'activity', label: 'nav.tokens', desc: 'nav.tokens.desc' },
-      ],
-    },
-    {
-      title: 'nav.analysis',
-      items: [
-        { id: 'projects', icon: 'folder', label: 'nav.projects', desc: 'nav.projects.desc' },
-        { id: 'budget', icon: 'wallet', label: 'nav.budget', desc: 'nav.budget.desc' },
-        { id: 'insights', icon: 'lightbulb', label: 'nav.insights', desc: 'nav.insights.desc' },
-      ],
-    },
-    {
-      title: 'nav.config',
-      items: [
-        { id: 'sessions', icon: 'terminal', label: 'nav.sessions', desc: 'nav.sessions.desc' },
-        { id: 'stats-cache', icon: 'database', label: 'nav.statsCache', desc: 'nav.statsCache.desc' },
-      ],
-    },
-    {
-      title: 'nav.developer',
-      items: [
-        { id: 'setup', icon: 'check', label: 'nav.setup', desc: 'nav.setup.desc' },
-        { id: 'prometheus-health', icon: 'heartbeat', label: 'nav.health', desc: 'nav.health.desc' },
-        { id: 'smoke-test', icon: 'flask', label: 'nav.smoke', desc: 'nav.smoke.desc' },
-      ],
-    },
-  ];
-
   $: formatCost = $fmt;
+  $: activeSection = sectionOf(activeView).id;
 
   function getIcon(name: string): string {
     const icons: Record<string, string> = {
@@ -102,101 +57,60 @@
   }
 </script>
 
-<aside class="w-52 h-screen bg-bg-primary border-r border-border-secondary flex flex-col">
-  <!-- Logo Header -->
-  <div class="px-3 py-3 flex items-center gap-2">
-    <!-- Custom Logo: Gradient background with pulse/monitor line -->
-    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 relative overflow-hidden"
-         style="background: linear-gradient(135deg, #00d9ff 0%, #007aff 50%, #a855f7 100%);">
-      <!-- Pulse/Activity line representing monitoring -->
-      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
-        <!-- Activity pulse line -->
-        <path
-          d="M2 12h4l2-6 4 12 2-6h8"
-          stroke="white"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));"
-        />
+<aside class="w-56 h-screen bg-bg-secondary border-r border-border-secondary flex flex-col">
+  <!-- Brand -->
+  <div class="px-4 pt-5 pb-4 flex items-center gap-2.5">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-accent-primary/15 border border-accent-primary/30">
+      <svg class="w-4.5 h-4.5 text-accent-primary" width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M2 12h4l2-6 4 12 2-6h8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </div>
-    <div class="flex-1 min-w-0">
-      <div class="text-xs text-text-muted uppercase tracking-wider leading-none">Claude Code</div>
-      <div class="text-sm font-semibold text-text-primary">Monitor</div>
-    </div>
-    <div class="px-3 py-1 text-sm font-bold rounded" style="background: rgba(0, 255, 136, 0.15); color: #00ff88;">
-      {formatCost($totalCost)}
+    <div class="flex-1 min-w-0 leading-tight">
+      <div class="text-sm font-semibold text-text-primary">Claude Monitor</div>
+      <div class="text-xs text-text-muted">{formatCost($totalCost)} · {$t('status.total')}</div>
     </div>
   </div>
 
+  <!-- Command palette entry (⌘K) -->
+  <div class="px-3 pb-3">
+    <button on:click={onOpenPalette} class="w-full flex items-center justify-between rounded-lg border border-border-secondary bg-bg-card px-2.5 py-1.5 text-xs text-text-muted hover:text-text-primary transition-colors">
+      <span>{$t('pal.search')}</span>
+      <kbd class="text-[10px] rounded bg-bg-primary px-1.5 py-0.5 border border-border-secondary">⌘K</kbd>
+    </button>
+  </div>
+
   <!-- Navigation -->
-  <nav class="flex-1 overflow-y-auto px-2 py-1">
-    {#each groups as group, gi}
-      <div class={gi < groups.length - 1 ? 'mb-3' : ''}>
-        <div class="px-2 py-1.5 text-xs font-medium text-text-muted uppercase tracking-wider">
-          {$t(group.title)}
-        </div>
-        {#each group.items as item}
-          {@const colors = tabColors[item.id]}
-          <button
-            class="w-full text-left px-2 py-1.5 rounded-md mb-0.5 transition-all duration-200
-              {activeView === item.id
-                ? 'text-text-primary'
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-card-hover'}"
-            style={activeView === item.id
-              ? `background: ${colors.glow}; border-left: 2px solid ${colors.border}; box-shadow: inset 0 0 12px ${colors.glow};`
-              : 'border-left: 2px solid transparent;'}
-            on:click={() => onNavigate(item.id)}
-          >
-            <div class="flex items-center gap-2">
-              <svg
-                class="w-4 h-4 flex-shrink-0 transition-colors duration-200"
-                style={activeView === item.id ? `color: ${colors.text};` : ''}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" d={getIcon(item.icon)} />
-              </svg>
-              <span class="text-sm font-medium truncate">{$t(item.label)}</span>
-            </div>
-            {#if activeView === item.id}
-              <div class="text-xs text-text-muted mt-0.5 ml-6 truncate">{$t(item.desc)}</div>
-            {/if}
-          </button>
-        {/each}
-      </div>
+  <nav class="flex-1 overflow-y-auto px-3 pb-2">
+    {#each sections as section}
+      {@const active = activeSection === section.id}
+      <button
+        class="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-1 transition-colors
+          {active ? 'bg-accent-primary/12 text-text-primary' : 'text-text-muted hover:text-text-primary hover:bg-bg-card'}"
+        title={$t(section.desc)}
+        on:click={() => onNavigate(section.id)}
+      >
+        <svg class="w-4 h-4 flex-shrink-0 {active ? 'text-accent-primary' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d={getIcon(section.icon)} />
+        </svg>
+        <span class="text-sm {active ? 'font-medium' : ''}">{$t(section.label)}</span>
+      </button>
     {/each}
   </nav>
 
-  <!-- Status Footer -->
-  <div class="px-3 py-2 border-t border-border-secondary">
-    <div class="flex items-center justify-between mb-0.5">
+  <!-- Status footer -->
+  <div class="px-4 py-3 border-t border-border-secondary flex items-center justify-between">
+    <div class="min-w-0">
       <div class="flex items-center gap-1.5">
-        <div class="w-2 h-2 rounded-full {$isConnected ? 'bg-accent-green' : 'bg-accent-red'}"></div>
-        <span class="text-sm font-bold {$isConnected ? 'text-accent-green' : 'text-accent-red'}">
-          {$isConnected ? $t('status.connected') : $t('status.disconnected')}
-        </span>
+        <span class="w-1.5 h-1.5 rounded-full {$isConnected ? 'bg-green' : 'bg-red'}"></span>
+        <span class="text-xs {$isConnected ? 'text-green' : 'text-red'}">{$isConnected ? $t('status.connected') : $t('status.disconnected')}</span>
       </div>
-      <button
-        on:click={onOpenSettings}
-        class="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-bg-card-hover transition-colors"
-        title={$t('settings.tooltip')}
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      </button>
+      <div class="text-[11px] text-text-muted mt-0.5">{$lastUpdated ? formatElapsed(elapsedSeconds) : $t('status.never')}</div>
     </div>
-    <div class="flex items-center gap-1 text-xs text-text-muted">
-      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10" stroke-width="2"/>
-        <path stroke-width="2" d="M12 6v6l4 2"/>
+    <button on:click={onOpenSettings} class="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-card transition-colors" title={$t('settings.tooltip')}>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
-      <span>{$lastUpdated ? formatElapsed(elapsedSeconds) : $t('status.never')}</span>
-    </div>
+    </button>
   </div>
 </aside>

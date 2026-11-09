@@ -6,7 +6,7 @@
   export let onChange: (value: PeriodType) => void;
 </script>
 
-<div class="flex bg-bg-card rounded-md p-0.5 gap-0.5">
+<div class="flex bg-bg-card rounded-xl p-0.5 gap-0.5">
   {#each PERIOD_OPTIONS as option}
     <button
       class="px-2 py-1 text-xs rounded transition-colors {value === option.value

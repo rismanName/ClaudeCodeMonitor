@@ -6,20 +6,21 @@
   import { settings } from '$lib/stores/settings';
   import { formatCost } from '$lib/format';
   import { t } from '$lib/i18n';
+  import { setAlert, clearAlert } from '$lib/stores';
 
   // Spend over a rolling 24h window (not calendar day), from the Sessions data source.
   let spentUsd = 0;
-  let dismissedFor = ''; // "warn"|"over" level the user dismissed
   let timer: ReturnType<typeof setInterval>;
 
   async function refresh() {
     if ($settings.dailyBudgetUsd <= 0) return;
     try {
-      const data = await invoke<{ sessions: { totalCostUsd: number }[] }>('get_sessions_data', {
-        timeRange: '24h',
+      // Total from Prometheus (not summed from sessions, which only lists sessions present in history.jsonl).
+      const m = await invoke<{ totalCostUsd: number }>('get_dashboard_metrics', {
+        timeRange: '1d',
         prometheusUrl: $settings.prometheusUrl,
       });
-      spentUsd = data.sessions.reduce((sum, s) => sum + (s.totalCostUsd || 0), 0);
+      spentUsd = m.totalCostUsd || 0;
     } catch {
       /* Prometheus/history unavailable: keep last value */
     }
@@ -44,14 +45,16 @@
   $: budget = $settings.dailyBudgetUsd;
   $: ratio = budget > 0 ? spentUsd / budget : 0;
   $: level = (budget > 0 && ratio >= 1 ? 'over' : budget > 0 && ratio >= 0.8 ? 'warn' : '') as '' | 'warn' | 'over';
-  $: if (level === '') dismissedFor = '';
-
   $: message =
     level === 'over'
       ? $t('budget.over', { spent: $formatCost(spentUsd), limit: $formatCost(budget) })
       : level === 'warn'
         ? $t('budget.warn', { pct: Math.round(ratio * 100), spent: $formatCost(spentUsd), limit: $formatCost(budget) })
         : '';
+
+  // Publish to the shared alert strip (AlertStrip renders it; dismissal is handled there).
+  $: if (budget > 0 && level) setAlert({ id: 'budget', severity: level === 'over' ? 'critical' : 'warn', text: message });
+  $: if (!(budget > 0 && level)) clearAlert('budget');
 
   // Tray marker + notification react to the level; message is computed with the current language.
   $: invoke('set_tray_alert', { level: level === 'over' ? 2 : level === 'warn' ? 1 : 0 }).catch(() => {});
@@ -67,13 +70,3 @@
   });
   onDestroy(() => timer && clearInterval(timer));
 </script>
-
-{#if budget > 0 && level && dismissedFor !== level}
-  <div
-    class="mb-3 flex items-center justify-between rounded-md border px-3 py-2 text-xs
-      {level === 'over' ? 'bg-red/10 border-red/50 text-red' : 'bg-peach/10 border-peach/50 text-peach'}"
-  >
-    <span>{message}</span>
-    <button class="ml-3 underline" on:click={() => (dismissedFor = level)}>{$t('stack.dismiss')}</button>
-  </div>
-{/if}
