@@ -5,6 +5,7 @@
   import { isConnected, lastUpdated, totalCost } from '$lib/stores';
   import { settings } from '$lib/stores/settings';
   import { t } from '$lib/i18n';
+  import type { TranslationKey } from '$lib/i18n';
 
   export let activeView: string;
   export let onNavigate: (view: string) => void;
@@ -42,31 +43,53 @@
     'sessions': { border: '#ff6b9d', glow: 'rgba(255, 107, 157, 0.15)', text: '#ff6b9d' },    // Pink - activity
     'stats-cache': { border: '#007aff', glow: 'rgba(0, 122, 255, 0.15)', text: '#007aff' },  // Blue - data
     'prometheus-health': { border: '#ff6b6b', glow: 'rgba(255, 107, 107, 0.15)', text: '#ff6b6b' }, // Red - infrastructure
+    'projects': { border: '#ffd93d', glow: 'rgba(255, 217, 61, 0.15)', text: '#ffd93d' },   // Yellow - projects
+    'budget': { border: '#00ff88', glow: 'rgba(0, 255, 136, 0.15)', text: '#00ff88' },       // Green - money
+    'setup': { border: '#00d9ff', glow: 'rgba(0, 217, 255, 0.15)', text: '#00d9ff' },         // Cyan - onboarding
     'smoke-test': { border: '#ffb347', glow: 'rgba(255, 179, 71, 0.15)', text: '#ffb347' }, // Orange - developer
   };
 
-  const prometheusItems = [
-    { id: 'summary', label: 'Dashboard', icon: 'grid', description: 'Overview of key metrics and cost' },
-    { id: 'tokens', label: 'Token Metrics', icon: 'activity', description: 'Token usage and model performance' },
+  type NavItem = { id: string; icon: string; label: TranslationKey; desc: TranslationKey };
+  const groups: { title: TranslationKey; items: NavItem[] }[] = [
+    {
+      title: 'nav.prometheus',
+      items: [
+        { id: 'summary', icon: 'grid', label: 'nav.dashboard', desc: 'nav.dashboard.desc' },
+        { id: 'tokens', icon: 'activity', label: 'nav.tokens', desc: 'nav.tokens.desc' },
+      ],
+    },
+    {
+      title: 'nav.analysis',
+      items: [
+        { id: 'projects', icon: 'folder', label: 'nav.projects', desc: 'nav.projects.desc' },
+        { id: 'budget', icon: 'wallet', label: 'nav.budget', desc: 'nav.budget.desc' },
+        { id: 'insights', icon: 'lightbulb', label: 'nav.insights', desc: 'nav.insights.desc' },
+      ],
+    },
+    {
+      title: 'nav.config',
+      items: [
+        { id: 'sessions', icon: 'terminal', label: 'nav.sessions', desc: 'nav.sessions.desc' },
+        { id: 'stats-cache', icon: 'database', label: 'nav.statsCache', desc: 'nav.statsCache.desc' },
+      ],
+    },
+    {
+      title: 'nav.developer',
+      items: [
+        { id: 'setup', icon: 'check', label: 'nav.setup', desc: 'nav.setup.desc' },
+        { id: 'prometheus-health', icon: 'heartbeat', label: 'nav.health', desc: 'nav.health.desc' },
+        { id: 'smoke-test', icon: 'flask', label: 'nav.smoke', desc: 'nav.smoke.desc' },
+      ],
+    },
   ];
-
-  const claudeCacheItems = [
-    { id: 'sessions', label: 'Session History', icon: 'terminal', description: 'Session cost explorer and analysis' },
-    { id: 'stats-cache', label: 'Stats Cache', icon: 'database', description: 'Local Claude Code usage statistics' },
-  ];
-
-  const developerItems = [
-    { id: 'prometheus-health', label: 'Prometheus Health', icon: 'heartbeat', description: 'Monitor local Prometheus instance' },
-    { id: 'smoke-test', label: 'Smoke Test', icon: 'flask', description: 'Debug and test connectivity' },
-  ];
-
-  const labelKey: Record<string, any> = {'summary': 'nav.dashboard', 'tokens': 'nav.tokens', 'sessions': 'nav.sessions', 'stats-cache': 'nav.statsCache', 'prometheus-health': 'nav.health', 'smoke-test': 'nav.smoke'};
-  const descKey: Record<string, any> = {'summary': 'nav.dashboard.desc', 'tokens': 'nav.tokens.desc', 'sessions': 'nav.sessions.desc', 'stats-cache': 'nav.statsCache.desc', 'prometheus-health': 'nav.health.desc', 'smoke-test': 'nav.smoke.desc'};
 
   $: formatCost = $fmt;
 
   function getIcon(name: string): string {
     const icons: Record<string, string> = {
+      folder: 'M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',
+      wallet: 'M3 7a2 2 0 012-2h14a2 2 0 012 2v2H3V7zm0 2h18v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm13 4h2',
+      check: 'M5 13l4 4L19 7',
       grid: 'M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z',
       activity: 'M22 12h-4l-3 9L9 3l-3 9H2',
       lightbulb: 'M9 21h6m-3-3v3m0-18a6 6 0 016 6c0 2.22-1.21 4.16-3 5.2V17a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2.8c-1.79-1.04-3-2.98-3-5.2a6 6 0 016-6z',
@@ -109,116 +132,43 @@
 
   <!-- Navigation -->
   <nav class="flex-1 overflow-y-auto px-2 py-1">
-    <!-- Prometheus Data Section -->
-    <div class="mb-3">
-      <div class="px-2 py-1.5 text-xs font-medium text-text-muted uppercase tracking-wider">
-        {$t('nav.prometheus')}
+    {#each groups as group, gi}
+      <div class={gi < groups.length - 1 ? 'mb-3' : ''}>
+        <div class="px-2 py-1.5 text-xs font-medium text-text-muted uppercase tracking-wider">
+          {$t(group.title)}
+        </div>
+        {#each group.items as item}
+          {@const colors = tabColors[item.id]}
+          <button
+            class="w-full text-left px-2 py-1.5 rounded-md mb-0.5 transition-all duration-200
+              {activeView === item.id
+                ? 'text-text-primary'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-card-hover'}"
+            style={activeView === item.id
+              ? `background: ${colors.glow}; border-left: 2px solid ${colors.border}; box-shadow: inset 0 0 12px ${colors.glow};`
+              : 'border-left: 2px solid transparent;'}
+            on:click={() => onNavigate(item.id)}
+          >
+            <div class="flex items-center gap-2">
+              <svg
+                class="w-4 h-4 flex-shrink-0 transition-colors duration-200"
+                style={activeView === item.id ? `color: ${colors.text};` : ''}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d={getIcon(item.icon)} />
+              </svg>
+              <span class="text-sm font-medium truncate">{$t(item.label)}</span>
+            </div>
+            {#if activeView === item.id}
+              <div class="text-xs text-text-muted mt-0.5 ml-6 truncate">{$t(item.desc)}</div>
+            {/if}
+          </button>
+        {/each}
       </div>
-      {#each prometheusItems as item}
-        {@const colors = tabColors[item.id]}
-        <button
-          class="w-full text-left px-2 py-1.5 rounded-md mb-0.5 transition-all duration-200
-            {activeView === item.id
-              ? 'text-text-primary'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-card-hover'}"
-          style={activeView === item.id
-            ? `background: ${colors.glow}; border-left: 2px solid ${colors.border}; box-shadow: inset 0 0 12px ${colors.glow};`
-            : 'border-left: 2px solid transparent;'}
-          on:click={() => onNavigate(item.id)}
-        >
-          <div class="flex items-center gap-2">
-            <svg
-              class="w-4 h-4 flex-shrink-0 transition-colors duration-200"
-              style={activeView === item.id ? `color: ${colors.text};` : ''}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              stroke-width="2"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d={getIcon(item.icon)} />
-            </svg>
-            <span class="text-sm font-medium truncate">{$t(labelKey[item.id])}</span>
-          </div>
-          {#if activeView === item.id}
-            <div class="text-xs text-text-muted mt-0.5 ml-6 truncate">{$t(descKey[item.id])}</div>
-          {/if}
-        </button>
-      {/each}
-    </div>
-
-    <!-- User Config Folder Section -->
-    <div class="mb-3">
-      <div class="px-2 py-1.5 text-xs font-medium text-text-muted uppercase tracking-wider">
-        {$t('nav.config')}
-      </div>
-      {#each claudeCacheItems as item}
-        {@const colors = tabColors[item.id]}
-        <button
-          class="w-full text-left px-2 py-1.5 rounded-md mb-0.5 transition-all duration-200
-            {activeView === item.id
-              ? 'text-text-primary'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-card-hover'}"
-          style={activeView === item.id
-            ? `background: ${colors.glow}; border-left: 2px solid ${colors.border}; box-shadow: inset 0 0 12px ${colors.glow};`
-            : 'border-left: 2px solid transparent;'}
-          on:click={() => onNavigate(item.id)}
-        >
-          <div class="flex items-center gap-2">
-            <svg
-              class="w-4 h-4 flex-shrink-0 transition-colors duration-200"
-              style={activeView === item.id ? `color: ${colors.text};` : ''}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              stroke-width="2"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d={getIcon(item.icon)} />
-            </svg>
-            <span class="text-sm font-medium truncate">{$t(labelKey[item.id])}</span>
-          </div>
-          {#if activeView === item.id}
-            <div class="text-xs text-text-muted mt-0.5 ml-6 truncate">{$t(descKey[item.id])}</div>
-          {/if}
-        </button>
-      {/each}
-    </div>
-
-    <!-- Developer Section -->
-    <div>
-      <div class="px-2 py-1.5 text-xs font-medium text-text-muted uppercase tracking-wider">
-        {$t('nav.developer')}
-      </div>
-      {#each developerItems as item}
-        {@const colors = tabColors[item.id]}
-        <button
-          class="w-full text-left px-2 py-1.5 rounded-md mb-0.5 transition-all duration-200
-            {activeView === item.id
-              ? 'text-text-primary'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-card-hover'}"
-          style={activeView === item.id
-            ? `background: ${colors.glow}; border-left: 2px solid ${colors.border}; box-shadow: inset 0 0 12px ${colors.glow};`
-            : 'border-left: 2px solid transparent;'}
-          on:click={() => onNavigate(item.id)}
-        >
-          <div class="flex items-center gap-2">
-            <svg
-              class="w-4 h-4 flex-shrink-0 transition-colors duration-200"
-              style={activeView === item.id ? `color: ${colors.text};` : ''}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              stroke-width="2"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d={getIcon(item.icon)} />
-            </svg>
-            <span class="text-sm font-medium truncate">{$t(labelKey[item.id])}</span>
-          </div>
-          {#if activeView === item.id}
-            <div class="text-xs text-text-muted mt-0.5 ml-6 truncate">{$t(descKey[item.id])}</div>
-          {/if}
-        </button>
-      {/each}
-    </div>
+    {/each}
   </nav>
 
   <!-- Status Footer -->

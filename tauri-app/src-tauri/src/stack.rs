@@ -219,3 +219,33 @@ pub async fn get_stack_logs(compose_dir: Option<String>, tail: Option<u32>) -> R
     .await
     .map_err(|e| e.to_string())?
 }
+
+/// Read-only snapshot of what the app needs to work, for the Setup checklist.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetupStatus {
+    pub engine_found: bool,
+    pub engine_running: bool,
+    pub prometheus_up: bool,
+    pub otlp_up: bool,
+    pub claude_dir_exists: bool,
+    pub stats_cache_exists: bool,
+}
+
+#[tauri::command]
+pub async fn get_setup_status() -> Result<SetupStatus, String> {
+    tokio::task::spawn_blocking(|| {
+        let engine = find_engine();
+        let claude = dirs::home_dir().map(|h| h.join(".claude"));
+        SetupStatus {
+            engine_found: engine.is_some(),
+            engine_running: engine.as_deref().map(engine_ready).unwrap_or(false),
+            prometheus_up: port_open(9090),
+            otlp_up: port_open(4317),
+            claude_dir_exists: claude.as_ref().map(|c| c.is_dir()).unwrap_or(false),
+            stats_cache_exists: claude.map(|c| c.join("stats-cache.json").is_file()).unwrap_or(false),
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())
+}

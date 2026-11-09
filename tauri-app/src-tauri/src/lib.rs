@@ -100,6 +100,7 @@ pub fn run() {
             stack::stop_monitoring_stack,
             stack::restart_monitoring_stack,
             stack::get_stack_logs,
+            stack::get_setup_status,
             backup::backup_prometheus,
             backup::list_backups,
             backup::restore_prometheus,

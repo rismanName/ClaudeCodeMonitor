@@ -10,6 +10,10 @@
     PrometheusHealthView,
     SettingsModal,
     BudgetBanner,
+    ProjectsView,
+    BudgetView,
+    SetupView,
+    InsightsView,
     SpikeBanner,
   } from '$lib/components';
   import { isConnected, requestedView } from '$lib/stores';
@@ -89,6 +93,14 @@
       <SummaryView />
     {:else if activeView === 'tokens'}
       <TokenMetricsView />
+    {:else if activeView === 'projects'}
+      <ProjectsView />
+    {:else if activeView === 'budget'}
+      <BudgetView />
+    {:else if activeView === 'insights'}
+      <InsightsView />
+    {:else if activeView === 'setup'}
+      <SetupView />
     {:else if activeView === 'sessions'}
       <SessionsView />
     {:else if activeView === 'stats-cache'}
