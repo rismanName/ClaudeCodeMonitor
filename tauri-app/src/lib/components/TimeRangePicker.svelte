@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tx } from '$lib/i18n';
   import { TIME_RANGE_OPTIONS, type TimeRange, type CustomTimeRange } from '$lib/types';
 
   export let value: TimeRange;
@@ -118,26 +119,26 @@
       class="absolute top-full right-0 mt-2 bg-bg-card border border-border-secondary rounded-lg shadow-xl z-50 p-4 min-w-[320px]"
       on:click|stopPropagation
       role="dialog"
-      aria-label="Custom time range picker"
+      aria-label={$tx("Custom time range picker")}
       tabindex="-1"
     >
-      <div class="text-sm font-medium text-text-primary mb-3">Custom Time Range</div>
+      <div class="text-sm font-medium text-text-primary mb-3">{$tx("Custom Time Range")}</div>
 
       <!-- Start Date/Time -->
       <div class="mb-3">
-        <span class="block text-xs text-text-muted mb-1">Start</span>
+        <span class="block text-xs text-text-muted mb-1">{$tx("Start")}</span>
         <div class="flex gap-2">
           <input
             type="date"
             bind:value={customStartDate}
-            aria-label="Start date"
+            aria-label={$tx("Start date")}
             class="flex-1 bg-bg-primary border border-border-secondary rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-blue"
             style="color-scheme: dark;"
           />
           <input
             type="time"
             bind:value={customStartTime}
-            aria-label="Start time"
+            aria-label={$tx("Start time")}
             class="w-24 bg-bg-primary border border-border-secondary rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-blue"
             style="color-scheme: dark;"
           />
@@ -146,19 +147,19 @@
 
       <!-- End Date/Time -->
       <div class="mb-4">
-        <span class="block text-xs text-text-muted mb-1">End</span>
+        <span class="block text-xs text-text-muted mb-1">{$tx("End")}</span>
         <div class="flex gap-2">
           <input
             type="date"
             bind:value={customEndDate}
-            aria-label="End date"
+            aria-label={$tx("End date")}
             class="flex-1 bg-bg-primary border border-border-secondary rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-blue"
             style="color-scheme: dark;"
           />
           <input
             type="time"
             bind:value={customEndTime}
-            aria-label="End time"
+            aria-label={$tx("End time")}
             class="w-24 bg-bg-primary border border-border-secondary rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-blue"
             style="color-scheme: dark;"
           />
@@ -171,13 +172,13 @@
           on:click={cancelCustomRange}
           class="px-3 py-1.5 text-sm text-text-muted hover:text-text-primary transition-colors"
         >
-          Cancel
+          {$tx("Cancel")}
         </button>
         <button
           on:click={applyCustomRange}
           class="px-4 py-1.5 text-sm font-medium bg-blue text-white rounded hover:bg-blue/80 transition-colors"
         >
-          Apply
+          {$tx("Apply")}
         </button>
       </div>
     </div>

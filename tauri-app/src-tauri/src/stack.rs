@@ -49,14 +49,14 @@ fn port_open(port: u16) -> bool {
     TcpStream::connect_timeout(&addr, Duration::from_millis(500)).is_ok()
 }
 
-fn find_engine() -> Option<PathBuf> {
+pub(crate) fn find_engine() -> Option<PathBuf> {
     ENGINE_CANDIDATES
         .iter()
         .map(PathBuf::from)
         .find(|p| p.exists())
 }
 
-fn engine_ready(engine: &Path) -> bool {
+pub(crate) fn engine_ready(engine: &Path) -> bool {
     Command::new(engine)
         .arg("info")
         .output()
@@ -158,4 +158,36 @@ pub async fn restart_monitoring_stack(compose_dir: Option<String>) -> Result<Sta
     tokio::task::spawn_blocking(move || compose_blocking(compose_dir, &["restart"]))
         .await
         .map_err(|e| e.to_string())
+}
+
+/// Last `tail` lines of the compose stack's logs (both services, no ANSI colors).
+#[tauri::command]
+pub async fn get_stack_logs(compose_dir: Option<String>, tail: Option<u32>) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || {
+        let engine = find_engine().ok_or("docker/podman not found")?;
+        let dir = compose_dir
+            .filter(|d| !d.trim().is_empty())
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(DEFAULT_COMPOSE_DIR));
+        let compose_file = dir.join("compose.yaml");
+        if !compose_file.exists() {
+            return Err(format!("compose.yaml not found: {}", compose_file.display()));
+        }
+        let out = Command::new(&engine)
+            .arg("compose")
+            .arg("-f")
+            .arg(&compose_file)
+            .args(["logs", "--no-color", "--tail"])
+            .arg(tail.unwrap_or(200).min(2000).to_string())
+            .output()
+            .map_err(|e| e.to_string())?;
+        // compose writes logs to stdout; errors to stderr.
+        let mut text = String::from_utf8_lossy(&out.stdout).to_string();
+        if !out.status.success() {
+            text.push_str(&String::from_utf8_lossy(&out.stderr));
+        }
+        Ok(text)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }

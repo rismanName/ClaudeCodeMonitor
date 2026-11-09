@@ -1,10 +1,4 @@
 <script lang="ts">
-  // TODO(efficiency-cache-saved): Show "estimated $ saved by cache" in the Efficiency row.
-  //   Expected: cacheReadTokens * (input price - cache-read price) per model; needs a per-model price table (none exists yet).
-  // TODO(anomaly): Flag cost spikes (current hour > 3x trailing 24h hourly average) with a banner + tray notification.
-  //   Expected: unit-tested threshold function; user can dismiss for the day.
-  // TODO(offline-cost): In the offline fallback, also show Total Spend from local transcripts.
-  //   Expected: cost computed in Rust from a per-model price table (shared with TODO(efficiency-cache-saved)); only tokens are shown today.
   import { onMount, onDestroy, tick } from 'svelte';
   import { get } from 'svelte/store';
   import { invoke } from '@tauri-apps/api/core';

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tx } from '$lib/i18n';
   import { formatCost as fmt } from '$lib/format';
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
@@ -111,7 +112,7 @@
 </script>
 
 <div>
-  <ViewHeader category="sessions" title="Session History">
+  <ViewHeader category="sessions" title={$tx("Session History")}>
     <svelte:fragment slot="actions">
       <TimeRangePicker value={$timeRangeStore} onChange={handleTimeRangeChange} />
     </svelte:fragment>
@@ -119,34 +120,34 @@
 
   {#if loading && !data}
     <div class="flex items-center justify-center h-32">
-      <div class="text-xs text-text-muted">Loading sessions...</div>
+      <div class="text-xs text-text-muted">{$tx("Loading sessions...")}</div>
     </div>
   {:else if error}
     <div class="bg-bg-card rounded-md p-4 text-center">
-      <div class="text-xs text-text-secondary mb-1">Unable to load sessions</div>
+      <div class="text-xs text-text-secondary mb-1">{$tx("Unable to load sessions")}</div>
       <div class="text-xs text-text-muted">{error}</div>
     </div>
   {:else if data}
     <!-- Top Sessions -->
     <div class="mb-4">
-      <div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Top Sessions</div>
+      <div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">{$tx("Top Sessions")}</div>
       <div class="grid grid-cols-3 gap-3">
         <!-- Highest Cost -->
         <div class="bg-bg-card rounded-lg p-4 border border-accent-green/30 shadow-[0_0_12px_rgba(0,255,136,0.15)]">
           <div class="flex items-center gap-1.5 mb-2">
             <div class="w-1.5 h-1.5 rounded-full bg-accent-green"></div>
-            <span class="text-xs text-text-muted uppercase tracking-wide">Highest Cost</span>
+            <span class="text-xs text-text-muted uppercase tracking-wide">{$tx("Highest Cost")}</span>
           </div>
           {#if highestCostSession}
             <div class="text-2xl font-bold text-accent-green mb-1">{formatCost(highestCostSession.totalCostUsd)}</div>
             <div class="text-xs text-text-muted font-mono mb-3">{truncateId(highestCostSession.sessionId)}</div>
             <div class="grid grid-cols-2 gap-4 text-xs border-t border-accent-green/20 pt-3">
               <div>
-                <div class="text-text-muted">Tokens</div>
+                <div class="text-text-muted">{$tx("Tokens")}</div>
                 <div class="text-text-primary">{formatTokens(highestCostSession.totalTokens)}</div>
               </div>
               <div class="border-l border-accent-green/20 pl-4">
-                <div class="text-text-muted">Duration</div>
+                <div class="text-text-muted">{$tx("Duration")}</div>
                 <div class="text-text-primary">{formatDuration(highestCostSession.activeTimeSeconds)}</div>
               </div>
             </div>
@@ -159,18 +160,18 @@
         <div class="bg-bg-card rounded-lg p-4 border border-sky/30 shadow-[0_0_12px_rgba(0,217,255,0.15)]">
           <div class="flex items-center gap-1.5 mb-2">
             <div class="w-1.5 h-1.5 rounded-full bg-sky"></div>
-            <span class="text-xs text-text-muted uppercase tracking-wide">Most Tokens</span>
+            <span class="text-xs text-text-muted uppercase tracking-wide">{$tx("Most Tokens")}</span>
           </div>
           {#if mostTokensSession}
             <div class="text-2xl font-bold text-sky mb-1">{formatTokens(mostTokensSession.totalTokens)}</div>
             <div class="text-xs text-text-muted font-mono mb-3">{truncateId(mostTokensSession.sessionId)}</div>
             <div class="grid grid-cols-2 gap-4 text-xs border-t border-sky/20 pt-3">
               <div>
-                <div class="text-text-muted">Tokens</div>
+                <div class="text-text-muted">{$tx("Tokens")}</div>
                 <div class="text-text-primary">{formatTokens(mostTokensSession.totalTokens)}</div>
               </div>
               <div class="border-l border-sky/20 pl-4">
-                <div class="text-text-muted">Duration</div>
+                <div class="text-text-muted">{$tx("Duration")}</div>
                 <div class="text-text-primary">{formatDuration(mostTokensSession.activeTimeSeconds)}</div>
               </div>
             </div>
@@ -183,18 +184,18 @@
         <div class="bg-bg-card rounded-lg p-4 border border-peach/30 shadow-[0_0_12px_rgba(255,179,71,0.15)]">
           <div class="flex items-center gap-1.5 mb-2">
             <div class="w-1.5 h-1.5 rounded-full bg-peach"></div>
-            <span class="text-xs text-text-muted uppercase tracking-wide">Longest Duration</span>
+            <span class="text-xs text-text-muted uppercase tracking-wide">{$tx("Longest Duration")}</span>
           </div>
           {#if longestSession}
             <div class="text-2xl font-bold text-peach mb-1">{formatDuration(longestSession.activeTimeSeconds)}</div>
             <div class="text-xs text-text-muted font-mono mb-3">{truncateId(longestSession.sessionId)}</div>
             <div class="grid grid-cols-2 gap-4 text-xs border-t border-peach/20 pt-3">
               <div>
-                <div class="text-text-muted">Tokens</div>
+                <div class="text-text-muted">{$tx("Tokens")}</div>
                 <div class="text-text-primary">{formatTokens(longestSession.totalTokens)}</div>
               </div>
               <div class="border-l border-peach/20 pl-4">
-                <div class="text-text-muted">Duration</div>
+                <div class="text-text-muted">{$tx("Duration")}</div>
                 <div class="text-text-primary">{formatDuration(longestSession.activeTimeSeconds)}</div>
               </div>
             </div>
@@ -209,7 +210,7 @@
     {#if sortedProjects.length > 0}
       <div class="mb-4">
         <div class="flex items-center justify-between mb-2">
-          <div class="text-xs font-medium text-text-muted uppercase tracking-wider">Cost by Project</div>
+          <div class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Cost by Project")}</div>
           <span class="text-xs text-text-muted">{sortedProjects.length} projects</span>
         </div>
         <div class="bg-bg-card rounded-lg overflow-hidden border border-border-primary">
@@ -217,19 +218,19 @@
             <thead>
               <tr class="border-b border-border-primary bg-bg-secondary/50">
                 <th class="text-left px-4 py-2.5 border-r border-border-secondary">
-                  <span class="text-xs uppercase tracking-wider text-text-muted">Project</span>
+                  <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Project")}</span>
                 </th>
                 <th class="text-right px-4 py-2.5 border-r border-border-secondary">
-                  <span class="text-xs uppercase tracking-wider text-text-muted">Cost</span>
+                  <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Cost")}</span>
                 </th>
                 <th class="text-right px-4 py-2.5 border-r border-border-secondary">
-                  <span class="text-xs uppercase tracking-wider text-text-muted">Tokens</span>
+                  <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Tokens")}</span>
                 </th>
                 <th class="text-right px-4 py-2.5 border-r border-border-secondary">
-                  <span class="text-xs uppercase tracking-wider text-text-muted">Sessions</span>
+                  <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Sessions")}</span>
                 </th>
                 <th class="text-right px-4 py-2.5">
-                  <span class="text-xs uppercase tracking-wider text-text-muted">Time</span>
+                  <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Time")}</span>
                 </th>
               </tr>
             </thead>
@@ -269,17 +270,17 @@
     <!-- All Sessions Table -->
     <div>
       <div class="flex items-center justify-between mb-2">
-        <div class="text-xs font-medium text-text-muted uppercase tracking-wider">All Sessions</div>
+        <div class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("All Sessions")}</div>
         <div class="flex items-center gap-2">
           <span class="text-xs text-text-muted">{sortedSessions.length} sessions</span>
           <select
             bind:value={sortOption}
             class="bg-bg-card text-text-primary border border-border-secondary rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
           >
-            <option value="cost_high">Cost (High to Low)</option>
-            <option value="cost_low">Cost (Low to High)</option>
-            <option value="tokens_high">Tokens (High to Low)</option>
-            <option value="duration_high">Duration (Longest)</option>
+            <option value="cost_high">{$tx("Cost (High to Low)")}</option>
+            <option value="cost_low">{$tx("Cost (Low to High)")}</option>
+            <option value="tokens_high">{$tx("Tokens (High to Low)")}</option>
+            <option value="duration_high">{$tx("Duration (Longest)")}</option>
           </select>
         </div>
       </div>
@@ -288,22 +289,22 @@
           <thead>
             <tr class="border-b border-border-primary bg-bg-secondary/50">
               <th class="text-left px-4 py-2.5 border-r border-border-secondary">
-                <span class="text-xs uppercase tracking-wider text-text-muted">Session ID</span>
+                <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Session ID")}</span>
               </th>
               <th class="text-left px-4 py-2.5 border-r border-border-secondary">
-                <span class="text-xs uppercase tracking-wider text-text-muted">Project</span>
+                <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Project")}</span>
               </th>
               <th class="text-right px-4 py-2.5 border-r border-border-secondary">
-                <span class="text-xs uppercase tracking-wider text-text-muted">Cost</span>
+                <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Cost")}</span>
               </th>
               <th class="text-right px-4 py-2.5 border-r border-border-secondary">
-                <span class="text-xs uppercase tracking-wider text-text-muted">Tokens</span>
+                <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Tokens")}</span>
               </th>
               <th class="text-right px-4 py-2.5 border-r border-border-secondary">
-                <span class="text-xs uppercase tracking-wider text-text-muted">Duration</span>
+                <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Duration")}</span>
               </th>
               <th class="text-right px-4 py-2.5 border-r border-border-secondary">
-                <span class="text-xs uppercase tracking-wider text-text-muted">Cost/Min</span>
+                <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Cost/Min")}</span>
               </th>
               <th class="w-8"></th>
             </tr>
@@ -346,7 +347,7 @@
             {#if sortedSessions.length === 0}
               <tr>
                 <td colspan="7" class="p-4 text-center text-text-muted text-sm">
-                  No sessions found for this time range
+                  {$tx("No sessions found for this time range")}
                 </td>
               </tr>
             {/if}

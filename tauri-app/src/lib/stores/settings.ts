@@ -2,8 +2,6 @@ import { writable } from 'svelte/store';
 import { load } from '@tauri-apps/plugin-store';
 import type { Settings } from '$lib/types';
 
-// TODO(telemetry-setup): Add a Settings button "Enable Claude Code telemetry" that appends the CLAUDE_CODE_ENABLE_TELEMETRY /
-//   OTEL_* exports to ~/.zshrc (idempotent, with confirm dialog + backup). Expected: new `claude` sessions report without manual setup.
 const STORE_PATH = 'settings.json';
 
 const defaultSettings: Settings = {

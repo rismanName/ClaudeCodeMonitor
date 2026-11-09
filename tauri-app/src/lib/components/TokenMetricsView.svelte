@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tx } from '$lib/i18n';
   import { onMount, onDestroy, tick } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { Chart, registerables } from 'chart.js';
@@ -246,7 +247,7 @@
   <!-- Header Row: Title + Time Range -->
   <div class="flex items-center justify-between mb-4">
     <div>
-      <h1 class="text-lg font-semibold text-text-primary">Token Metrics</h1>
+      <h1 class="text-lg font-semibold text-text-primary">{$tx("Token Metrics")}</h1>
       <p class="text-xs text-text-muted">{getTimeRangeLabel($timeRangeStore)}</p>
     </div>
     <TimeRangePicker value={$timeRangeStore} onChange={handleTimeRangeChange} />
@@ -254,7 +255,7 @@
 
   {#if loading && !metrics}
     <div class="flex items-center justify-center h-32">
-      <div class="text-xs text-text-muted">Loading metrics...</div>
+      <div class="text-xs text-text-muted">{$tx("Loading metrics...")}</div>
     </div>
   {:else if error}
     <div class="bg-red/10 border border-red/50 rounded-md p-3 mb-4">
@@ -268,20 +269,20 @@
     {@const cacheCreatePercent = metrics.totalTokens > 0 ? (metrics.cacheCreationTokens / metrics.totalTokens) * 100 : 0}
     <!-- Row 1: Total Tokens, Input, Output -->
     <div class="grid grid-cols-3 gap-2 mb-2">
-      <MetricCard label="Total Tokens" value={formatTokens(metrics.totalTokens)} subtitle={getTimeRangeLabel($timeRangeStore)} color="cyan" highlight={true} />
-      <MetricCard label="Input" value={formatTokens(metrics.inputTokens)} subtitle="{inputPercent.toFixed(1)}%" color="green" showBar barPercent={inputPercent} />
-      <MetricCard label="Output" value={formatTokens(metrics.outputTokens)} subtitle="{outputPercent.toFixed(1)}%" color="purple" showBar barPercent={outputPercent} />
+      <MetricCard label={$tx("Total Tokens")} value={formatTokens(metrics.totalTokens)} subtitle={getTimeRangeLabel($timeRangeStore)} color="cyan" highlight={true} />
+      <MetricCard label={$tx("Input")} value={formatTokens(metrics.inputTokens)} subtitle="{inputPercent.toFixed(1)}%" color="green" showBar barPercent={inputPercent} />
+      <MetricCard label={$tx("Output")} value={formatTokens(metrics.outputTokens)} subtitle="{outputPercent.toFixed(1)}%" color="purple" showBar barPercent={outputPercent} />
     </div>
     <!-- Row 2: Cache Read, Cache Create -->
     <div class="grid grid-cols-2 gap-2 mb-4">
-      <MetricCard label="Cache Read" value={formatTokens(metrics.cacheReadTokens)} subtitle="{cacheReadPercent.toFixed(1)}%" color="orange" showBar barPercent={cacheReadPercent} />
-      <MetricCard label="Cache Create" value={formatTokens(metrics.cacheCreationTokens)} subtitle="{cacheCreatePercent.toFixed(1)}%" color="blue" showBar barPercent={cacheCreatePercent} />
+      <MetricCard label={$tx("Cache Read")} value={formatTokens(metrics.cacheReadTokens)} subtitle="{cacheReadPercent.toFixed(1)}%" color="orange" showBar barPercent={cacheReadPercent} />
+      <MetricCard label={$tx("Cache Create")} value={formatTokens(metrics.cacheCreationTokens)} subtitle="{cacheCreatePercent.toFixed(1)}%" color="blue" showBar barPercent={cacheCreatePercent} />
     </div>
 
     <!-- Total Tokens Over Time -->
     <div class="bg-bg-card rounded-md p-4 mb-4">
       <div class="flex items-center justify-between mb-1">
-        <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Total Tokens Over Time</span>
+        <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Total Tokens Over Time")}</span>
         <span class="text-xs text-text-muted">{getTimeRangeLabel($timeRangeStore)}</span>
       </div>
       <div class="h-40"><canvas bind:this={tokensOverTimeCanvas}></canvas></div>
@@ -290,8 +291,8 @@
     <!-- Tokens By Model -->
     <div class="bg-bg-card rounded-md p-4">
       <div class="mb-3 text-center">
-        <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Tokens By Model</span>
-        <span class="text-xs text-text-muted ml-2">breakdown</span>
+        <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Tokens By Model")}</span>
+        <span class="text-xs text-text-muted ml-2">{$tx("breakdown")}</span>
       </div>
       <div class="flex items-center justify-center gap-8">
         <!-- Doughnut chart -->

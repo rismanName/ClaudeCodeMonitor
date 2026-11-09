@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tx } from '$lib/i18n';
   import { formatCost as fmt } from '$lib/format';
   import { onMount, onDestroy, tick } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
@@ -205,29 +206,29 @@
 </script>
 
 <div>
-  <ViewHeader category="stats-cache" title="Stats Cache" subtitle="From ~/.claude/stats-cache.json" />
+  <ViewHeader category="stats-cache" title={$tx("Stats Cache")} subtitle="From ~/.claude/stats-cache.json" />
 
   {#if loading && !data}
     <div class="flex items-center justify-center h-32">
-      <div class="text-xs text-text-muted">Loading stats cache...</div>
+      <div class="text-xs text-text-muted">{$tx("Loading stats cache...")}</div>
     </div>
   {:else if error}
     <div class="bg-bg-card rounded-md p-6">
-      <div class="text-base font-semibold text-text-primary mb-2">Stats Not Available Yet</div>
+      <div class="text-base font-semibold text-text-primary mb-2">{$tx("Stats Not Available Yet")}</div>
       <p class="text-sm text-text-secondary mb-4">
         Claude Code hasn't generated usage statistics yet. This file is created automatically by Claude Code in the background — there's no manual way to trigger it.
       </p>
       <ul class="text-sm text-text-secondary mb-4 list-disc list-inside space-y-1">
-        <li>Use Claude Code for a few sessions</li>
-        <li>Try running <code class="bg-bg-primary px-1 py-0.5 rounded text-text-muted">/stats</code> in Claude Code</li>
-        <li>Check back later</li>
+        <li>{$tx("Use Claude Code for a few sessions")}</li>
+        <li>{$tx("Try running")} <code class="bg-bg-primary px-1 py-0.5 rounded text-text-muted">/stats</code> {$tx("in Claude Code")}</li>
+        <li>{$tx("Check back later")}</li>
       </ul>
       <div class="text-xs text-text-muted mb-4">Looking for: ~/.claude/stats-cache.json</div>
       <button
         class="px-4 py-2 bg-accent-blue text-white text-sm font-medium rounded-md hover:opacity-90 transition-opacity"
         on:click={fetchData}
       >
-        Refresh
+        {$tx("Refresh")}
       </button>
     </div>
   {:else if data}
@@ -239,23 +240,23 @@
 
     <!-- Summary Cards - 8 cards in 2 rows of 4 -->
     <div class="grid grid-cols-4 gap-2 mb-3">
-      <MetricCard label="Est. Cost" value={formatCost(data.estimatedCost)} subtitle="all time" color="green" highlight={true} />
-      <MetricCard label="Total Tokens" value={formatTokens(data.totalTokens)} subtitle="all time" color="cyan" highlight={true} />
-      <MetricCard label="Sessions" value={data.totalSessions.toString()} subtitle="all time" color="green" />
-      <MetricCard label="Active Days" value={data.activeDays.toString()} subtitle="days used" color="yellow" />
+      <MetricCard label={$tx("Est. Cost")} value={formatCost(data.estimatedCost)} subtitle={$tx("all time")} color="green" highlight={true} />
+      <MetricCard label={$tx("Total Tokens")} value={formatTokens(data.totalTokens)} subtitle={$tx("all time")} color="cyan" highlight={true} />
+      <MetricCard label={$tx("Sessions")} value={data.totalSessions.toString()} subtitle={$tx("all time")} color="green" />
+      <MetricCard label={$tx("Active Days")} value={data.activeDays.toString()} subtitle={$tx("days used")} color="yellow" />
     </div>
     <div class="grid grid-cols-4 gap-2 mb-3">
-      <MetricCard label="Messages" value={data.totalMessages.toLocaleString()} subtitle="all time" color="purple" />
-      <MetricCard label="Avg/Day" value={data.avgMessagesPerDay.toFixed(1)} subtitle="messages" color="orange" />
-      <MetricCard label="Peak Hour" value={formatHour(data.peakHour)} subtitle="most active" color="cyan" />
-      <MetricCard label="First Session" value={formatDate(data.firstSession)} subtitle="started using" color="blue" />
+      <MetricCard label={$tx("Messages")} value={data.totalMessages.toLocaleString()} subtitle={$tx("all time")} color="purple" />
+      <MetricCard label={$tx("Avg/Day")} value={data.avgMessagesPerDay.toFixed(1)} subtitle={$tx("messages")} color="orange" />
+      <MetricCard label={$tx("Peak Hour")} value={formatHour(data.peakHour)} subtitle={$tx("most active")} color="cyan" />
+      <MetricCard label={$tx("First Session")} value={formatDate(data.firstSession)} subtitle={$tx("started using")} color="blue" />
     </div>
 
     <!-- Daily Activity Chart -->
     <div class="bg-bg-card rounded-md p-3 mb-3">
       <div class="flex items-center justify-between mb-2">
-        <div class="text-xs font-medium text-text-muted uppercase tracking-wider">Daily Activity</div>
-        <span class="text-xs text-text-muted">Last 30 days</span>
+        <div class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Daily Activity")}</div>
+        <span class="text-xs text-text-muted">{$tx("Last 30 days")}</span>
       </div>
       <div class="h-32"><canvas bind:this={dailyChartCanvas}></canvas></div>
     </div>
@@ -264,7 +265,7 @@
 
     <!-- Token Usage by Model -->
     <div class="bg-bg-card rounded-md p-4 mb-3">
-      <div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-3">Token Usage by Model</div>
+      <div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-3">{$tx("Token Usage by Model")}</div>
       <div class="flex items-center gap-5">
         <div class="w-30 h-30 flex-shrink-0" style="width: 120px; height: 120px;">
           <canvas bind:this={modelChartCanvas}></canvas>
@@ -284,7 +285,7 @@
 
     <!-- Activity by Hour -->
     <div class="bg-bg-card rounded-md p-3">
-      <div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Activity by Hour</div>
+      <div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">{$tx("Activity by Hour")}</div>
       <div class="h-28"><canvas bind:this={hourlyChartCanvas}></canvas></div>
     </div>
   {/if}

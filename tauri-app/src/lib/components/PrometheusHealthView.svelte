@@ -1,9 +1,6 @@
 <script lang="ts">
-  // TODO(stack-logs): "Open logs" button for the compose stack. Expected: shows the last 200 lines of `compose logs` in a modal.
-  // TODO(backup): "Export/Import Prometheus data" button (tsdb snapshot via /api/v1/admin/tsdb/snapshot, needs --web.enable-admin-api in compose.yaml).
-  //   Expected: .tar.gz saved by user-chosen path; restore restarts the stack.
   import { onMount, onDestroy, tick } from 'svelte';
-  import { t } from '$lib/i18n';
+  import { t, tx } from '$lib/i18n';
   import type { TranslationKey } from '$lib/i18n';
   import { invoke } from '@tauri-apps/api/core';
   import { Chart, registerables } from 'chart.js';
@@ -212,6 +209,32 @@
     }
   }
 
+  let logsOpen = false;
+  let logsText = '';
+  async function toggleLogs() {
+    logsOpen = !logsOpen;
+    if (!logsOpen) return;
+    logsText = '…';
+    try {
+      logsText = (await invoke<string>('get_stack_logs', { composeDir: $settings.composeDir || null, tail: 200 })) || '(empty)';
+    } catch (e) {
+      logsText = String(e);
+    }
+  }
+
+  async function backupNow() {
+    stackBusy = true;
+    stackMsg = null;
+    try {
+      const r = await invoke<{ path: string }>('backup_prometheus', { prometheusUrl: $settings.prometheusUrl });
+      stackMsg = { ok: true, text: `${$t('export.saved')}: ${r.path}` };
+    } catch (e) {
+      stackMsg = { ok: false, text: String(e) === 'admin_api_disabled' ? $t('backup.needAdmin') : String(e) };
+    } finally {
+      stackBusy = false;
+    }
+  }
+
   function getTimeRangeLabel(): string {
     if ($timeRangeStore === 'custom' && $customTimeRangeStore) {
       const start = new Date($customTimeRangeStore.start * 1000);
@@ -339,14 +362,20 @@
     <button disabled={stackBusy} on:click={() => stackAction('ensure_monitoring_stack')} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('stack.start')}</button>
     <button disabled={stackBusy} on:click={() => stackAction('restart_monitoring_stack')} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('stack.restart')}</button>
     <button disabled={stackBusy} on:click={() => stackAction('stop_monitoring_stack')} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('stack.stop')}</button>
+    <button disabled={stackBusy} on:click={toggleLogs} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('stack.logs')}</button>
+    <button disabled={stackBusy} on:click={backupNow} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('backup.button')}</button>
     {#if stackBusy}<span class="text-xs text-text-muted">…</span>{/if}
     {#if stackMsg}<span class="text-xs {stackMsg.ok ? 'text-green' : 'text-red'}">{stackMsg.text}</span>{/if}
   </div>
 
+  {#if logsOpen}
+    <pre class="mb-3 max-h-64 overflow-auto rounded-md bg-bg-card border border-border-secondary p-2 text-[10px] leading-snug text-text-secondary whitespace-pre-wrap">{logsText}</pre>
+  {/if}
+
   <!-- Header -->
   <div class="flex items-center justify-between mb-4">
     <div class="flex-shrink-0">
-      <h1 class="text-lg font-semibold text-text-primary">Prometheus Health</h1>
+      <h1 class="text-lg font-semibold text-text-primary">{$tx("Prometheus Health")}</h1>
       <p class="text-xs text-text-muted">{getTimeRangeLabel()}</p>
     </div>
     <div class="flex-shrink-0">
@@ -361,7 +390,7 @@
 
   {#if loading && !metrics}
     <div class="flex items-center justify-center h-32">
-      <div class="text-xs text-text-muted">Loading health metrics...</div>
+      <div class="text-xs text-text-muted">{$tx("Loading health metrics...")}</div>
     </div>
   {:else if error}
     <div class="bg-red/10 border border-red/50 rounded-md p-3 mb-4">
@@ -377,7 +406,7 @@
       >
         <div class="flex items-center gap-1.5 mb-2">
           <div class="w-1.5 h-1.5 rounded-full bg-sky"></div>
-          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Storage</span>
+          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Storage")}</span>
         </div>
 
         <div class="flex items-baseline gap-2 mb-2">
@@ -402,11 +431,11 @@
         <!-- Storage breakdown -->
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span class="text-text-muted">Blocks:</span>
+            <span class="text-text-muted">{$tx("Blocks:")}</span>
             <span class="text-text-secondary ml-1">{formatBytes(metrics.storageBlocksBytes)}</span>
           </div>
           <div>
-            <span class="text-text-muted">WAL:</span>
+            <span class="text-text-muted">{$tx("WAL:")}</span>
             <span class="text-text-secondary ml-1">{formatBytes(metrics.storageWalBytes)}</span>
           </div>
         </div>
@@ -419,22 +448,22 @@
       >
         <div class="flex items-center gap-1.5 mb-2">
           <div class="w-1.5 h-1.5 rounded-full bg-mauve"></div>
-          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Memory</span>
+          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Memory")}</span>
         </div>
 
         <div class="flex items-baseline gap-2 mb-2">
           <span class="text-2xl font-bold text-text-primary">{formatBytes(metrics.processMemoryBytes)}</span>
-          <span class="text-xs text-text-muted">RSS</span>
+          <span class="text-xs text-text-muted">{$tx("RSS")}</span>
         </div>
 
         <!-- Memory breakdown -->
         <div class="grid grid-cols-2 gap-2 text-xs mb-2">
           <div>
-            <span class="text-text-muted">Heap:</span>
+            <span class="text-text-muted">{$tx("Heap:")}</span>
             <span class="text-text-secondary ml-1">{formatBytes(metrics.heapInuseBytes)}</span>
           </div>
           <div>
-            <span class="text-text-muted">Alloc:</span>
+            <span class="text-text-muted">{$tx("Alloc:")}</span>
             <span class="text-text-secondary ml-1">{formatBytes(metrics.heapAllocBytes)}</span>
           </div>
         </div>
@@ -442,11 +471,11 @@
         <!-- CPU & Goroutines -->
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span class="text-text-muted">CPU:</span>
+            <span class="text-text-muted">{$tx("CPU:")}</span>
             <span class="text-text-secondary ml-1">{getCpuPercent(metrics.cpuSecondsRate).toFixed(1)}%</span>
           </div>
           <div>
-            <span class="text-text-muted">Goroutines:</span>
+            <span class="text-text-muted">{$tx("Goroutines:")}</span>
             <span class="text-text-secondary ml-1">{metrics.goroutines.toLocaleString()}</span>
           </div>
         </div>
@@ -458,7 +487,7 @@
       <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-1.5">
           <div class="w-1.5 h-1.5 rounded-full bg-sky"></div>
-          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Storage Over Time</span>
+          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Storage Over Time")}</span>
         </div>
         <span class="text-xs text-text-muted">{getTimeRangeLabel()}</span>
       </div>
@@ -472,7 +501,7 @@
       <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-1.5">
           <div class="w-1.5 h-1.5 rounded-full bg-mauve"></div>
-          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Memory Over Time</span>
+          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Memory Over Time")}</span>
         </div>
         <span class="text-xs text-text-muted">{getTimeRangeLabel()}</span>
       </div>
@@ -487,21 +516,21 @@
       <div class="bg-bg-card rounded-md p-3">
         <div class="flex items-center gap-1.5 mb-2">
           <div class="w-1.5 h-1.5 rounded-full bg-green"></div>
-          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Ingestion</span>
+          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Ingestion")}</span>
         </div>
 
         <div class="flex items-baseline gap-2 mb-2">
           <span class="text-2xl font-bold text-text-primary">{formatRate(metrics.samplesAppendedRate)}</span>
-          <span class="text-xs text-text-muted">samples</span>
+          <span class="text-xs text-text-muted">{$tx("samples")}</span>
         </div>
 
         <div class="grid grid-cols-2 gap-2 text-xs mb-2">
           <div>
-            <span class="text-text-muted">New series:</span>
+            <span class="text-text-muted">{$tx("New series:")}</span>
             <span class="text-text-secondary ml-1">{formatRate(metrics.seriesCreatedRate)}</span>
           </div>
           <div>
-            <span class="text-text-muted">Active series:</span>
+            <span class="text-text-muted">{$tx("Active series:")}</span>
             <span class="text-text-secondary ml-1">{metrics.headSeries.toLocaleString()}</span>
           </div>
         </div>
@@ -511,32 +540,32 @@
       <div class="bg-bg-card rounded-md p-3">
         <div class="flex items-center gap-1.5 mb-2">
           <div class="w-1.5 h-1.5 rounded-full bg-peach"></div>
-          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Scraping</span>
+          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Scraping")}</span>
         </div>
 
         <div class="flex items-baseline gap-2 mb-2">
           <span class="text-2xl font-bold text-text-primary">{metrics.targetCount.toLocaleString()}</span>
-          <span class="text-xs text-text-muted">targets</span>
+          <span class="text-xs text-text-muted">{$tx("targets")}</span>
         </div>
 
         <div class="grid grid-cols-2 gap-2 text-xs mb-2">
           <div>
-            <span class="text-text-muted">Scrape time:</span>
+            <span class="text-text-muted">{$tx("Scrape time:")}</span>
             <span class="text-text-secondary ml-1">{(metrics.scrapeDurationSeconds * 1000).toFixed(0)}ms</span>
           </div>
           <div>
-            <span class="text-text-muted">Samples/scrape:</span>
+            <span class="text-text-muted">{$tx("Samples/scrape:")}</span>
             <span class="text-text-secondary ml-1">{metrics.scrapeSamples.toLocaleString()}</span>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span class="text-text-muted">Retention:</span>
+            <span class="text-text-muted">{$tx("Retention:")}</span>
             <span class="text-text-secondary ml-1">{getRetentionPeriod(metrics)}</span>
           </div>
           <div>
-            <span class="text-text-muted">Blocks:</span>
+            <span class="text-text-muted">{$tx("Blocks:")}</span>
             <span class="text-text-secondary ml-1">{metrics.blocksLoaded.toLocaleString()}</span>
           </div>
         </div>
@@ -554,7 +583,7 @@
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-1.5">
           <div class="w-2 h-2 rounded-full" style="background-color: {health.color}; box-shadow: 0 0 8px {health.color};"></div>
-          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Health Indicators</span>
+          <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Health Indicators")}</span>
         </div>
       </div>
 
@@ -571,14 +600,14 @@
         <!-- Uptime -->
         <div class="text-center">
           <div class="text-lg font-bold text-text-primary">{formatDuration(metrics.uptimeSeconds)}</div>
-          <div class="text-xs text-text-muted">Uptime</div>
-          <div class="text-xs text-text-muted mt-1">running</div>
+          <div class="text-xs text-text-muted">{$tx("Uptime")}</div>
+          <div class="text-xs text-text-muted mt-1">{$tx("running")}</div>
         </div>
 
         <!-- Compactions -->
         <div class="text-center">
           <div class="text-lg font-bold text-text-primary">{metrics.compactionsTotal.toLocaleString()}</div>
-          <div class="text-xs text-text-muted">Compactions</div>
+          <div class="text-xs text-text-muted">{$tx("Compactions")}</div>
           {#if metrics.compactionsFailed > 0}
             <div class="text-xs text-red mt-1">{metrics.compactionsFailed} failed</div>
           {:else}
@@ -591,7 +620,7 @@
           <div class="text-lg font-bold" style="color: {metrics.walCorruptions === 0 ? '#00ff88' : '#ff6b6b'}">
             {metrics.walCorruptions === 0 ? 'OK' : metrics.walCorruptions}
           </div>
-          <div class="text-xs text-text-muted">WAL Health</div>
+          <div class="text-xs text-text-muted">{$tx("WAL Health")}</div>
           <div class="text-xs text-text-muted mt-1">{metrics.walCorruptions === 0 ? 'No corruptions' : 'corruptions'}</div>
         </div>
 
@@ -600,7 +629,7 @@
           <div class="text-lg font-bold" style="color: {metrics.configReloadSuccess ? '#00ff88' : '#ff6b6b'}">
             {metrics.configReloadSuccess ? 'OK' : 'Failed'}
           </div>
-          <div class="text-xs text-text-muted">Config</div>
+          <div class="text-xs text-text-muted">{$tx("Config")}</div>
           {#if metrics.configReloadTimestamp > 0}
             <div class="text-xs text-text-muted mt-1">
               {new Date(metrics.configReloadTimestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

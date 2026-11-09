@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tx } from '$lib/i18n';
   import { formatCost as fmt } from '$lib/format';
   import type { SessionMetrics } from '$lib/types';
 
@@ -86,7 +87,7 @@
           </button>
         </th>
         <th class="text-left px-3 py-2">
-          <span class="text-xs uppercase tracking-wider text-text-muted">Session</span>
+          <span class="text-xs uppercase tracking-wider text-text-muted">{$tx("Session")}</span>
         </th>
         <th class="text-right px-3 py-2">
           <button
@@ -144,7 +145,7 @@
       {#if sortedSessions.length === 0}
         <tr>
           <td colspan="5" class="p-4 text-center text-text-muted text-xs">
-            No sessions found for this time range
+            {$tx("No sessions found for this time range")}
           </td>
         </tr>
       {/if}

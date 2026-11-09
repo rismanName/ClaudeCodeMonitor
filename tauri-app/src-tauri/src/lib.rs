@@ -1,8 +1,10 @@
 mod anomaly;
+mod backup;
 mod commands;
 mod export;
 mod insights;
 mod metrics;
+mod pricing;
 mod prometheus;
 mod prometheus_health;
 mod sessions;
@@ -97,6 +99,8 @@ pub fn run() {
             stack::ensure_monitoring_stack,
             stack::stop_monitoring_stack,
             stack::restart_monitoring_stack,
+            stack::get_stack_logs,
+            backup::backup_prometheus,
             export::save_export,
             anomaly::get_cost_spike,
             usage::get_usage_windows,

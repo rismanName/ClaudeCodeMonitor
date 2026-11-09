@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tx } from '$lib/i18n';
   import type { SessionMetrics } from '$lib/types';
 
   export let session: SessionMetrics | null;
@@ -38,12 +39,12 @@
       <!-- Header -->
       <div class="flex items-center justify-between px-3 py-2.5 border-b border-border-secondary">
         <div>
-          <h2 class="text-sm font-semibold text-text-primary">Session Details</h2>
+          <h2 class="text-sm font-semibold text-text-primary">{$tx("Session Details")}</h2>
         </div>
         <button
           on:click={onClose}
           class="text-text-muted hover:text-text-primary transition-colors"
-          aria-label="Close"
+          aria-label={$tx("Close")}
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -54,7 +55,7 @@
       <!-- Session Info -->
       <div class="p-3 space-y-3">
         <div>
-          <div class="text-xs text-text-muted uppercase tracking-wider mb-1">Project</div>
+          <div class="text-xs text-text-muted uppercase tracking-wider mb-1">{$tx("Project")}</div>
           <div class="text-sm font-medium text-sky">{session.project || 'Unknown'}</div>
           {#if session.projectPath}
             <div class="text-xs text-text-muted font-mono truncate" title={session.projectPath}>{session.projectPath}</div>
@@ -63,17 +64,17 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <div class="text-xs text-text-muted uppercase tracking-wider mb-1">Session ID</div>
+            <div class="text-xs text-text-muted uppercase tracking-wider mb-1">{$tx("Session ID")}</div>
             <div class="text-xs font-mono text-text-secondary">{session.sessionId}</div>
           </div>
           <div>
-            <div class="text-xs text-text-muted uppercase tracking-wider mb-1">Last Activity</div>
+            <div class="text-xs text-text-muted uppercase tracking-wider mb-1">{$tx("Last Activity")}</div>
             <div class="text-xs text-text-primary">{formatDateTime(session.timestamp)}</div>
           </div>
         </div>
 
         <div>
-          <div class="text-xs text-text-muted uppercase tracking-wider mb-1">Messages</div>
+          <div class="text-xs text-text-muted uppercase tracking-wider mb-1">{$tx("Messages")}</div>
           <div class="text-lg font-bold text-text-primary">{session.messageCount}</div>
         </div>
       </div>

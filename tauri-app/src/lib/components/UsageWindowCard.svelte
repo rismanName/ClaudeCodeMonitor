@@ -3,14 +3,18 @@
   import { invoke } from '@tauri-apps/api/core';
   import { settings } from '$lib/stores/settings';
   import { t } from '$lib/i18n';
+  import { formatCost } from '$lib/format';
 
   interface UsageWindows {
     blockActive: boolean;
     blockStart: number;
     blockEnd: number;
     blockTokens: number;
+    blockCostUsd: number;
     minutesRemaining: number;
     weekTokens: number;
+    weekCostUsd: number;
+    weekCacheSavedUsd: number;
   }
 
   let usage: UsageWindows | null = null;
@@ -18,7 +22,7 @@
 
   async function refresh() {
     try {
-      usage = await invoke<UsageWindows>('get_usage_windows');
+      usage = await invoke<UsageWindows>('get_usage_windows', { pricingProvider: $settings.pricingProvider });
     } catch (e) {
       console.error('get_usage_windows failed:', e);
     }
@@ -53,7 +57,7 @@
 
   {#if usage}
     <div class="flex items-baseline justify-between mb-1">
-      <span class="text-lg font-bold text-text-primary">{fmtTokens(usage.blockTokens)}</span>
+      <span class="text-lg font-bold text-text-primary">{fmtTokens(usage.blockTokens)} <span class="text-xs font-normal text-text-muted">· {$formatCost(usage.blockCostUsd)}</span></span>
       {#if limit > 0}
         <span class="text-xs text-text-muted">/ {fmtTokens(limit)} ({pct.toFixed(0)}%)</span>
       {/if}
@@ -66,7 +70,8 @@
       <p class="text-xs text-text-muted">{$t('usage.setLimit')}</p>
     {/if}
     <div class="mt-2 text-xs text-text-muted">
-      {$t('usage.week')}: <span class="text-text-secondary">{fmtTokens(usage.weekTokens)}</span>
+      {$t('usage.week')}: <span class="text-text-secondary">{fmtTokens(usage.weekTokens)} · {$formatCost(usage.weekCostUsd)}</span>
+      <span class="ml-2">{$t('usage.cacheSaved')}: <span class="text-green">{$formatCost(usage.weekCacheSavedUsd)}</span></span>
     </div>
   {/if}
 </div>
