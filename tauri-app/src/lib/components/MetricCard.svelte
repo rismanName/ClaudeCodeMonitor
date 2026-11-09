@@ -6,6 +6,12 @@
   export let showBar: boolean = false;
   export let barPercent: number = 0;
   export let highlight: boolean = false;
+  /** % change vs previous period; null = unknown / previous was 0 (nothing rendered). */
+  export let delta: number | null = null;
+  /** For cost-like metrics, a decrease is good. */
+  export let lowerIsBetter: boolean = false;
+
+  $: deltaGood = delta === null || delta === 0 ? null : (delta < 0) === lowerIsBetter;
 
   const colorClasses: Record<string, { dot: string; bar: string; glow: string; border: string }> = {
     green: { dot: 'bg-green', bar: 'bg-green', glow: 'rgba(0, 255, 136, 0.15)', border: 'rgba(0, 255, 136, 0.4)' },
@@ -32,7 +38,14 @@
     <div class="w-1.5 h-1.5 rounded-full {colorClasses[color].dot}"></div>
     <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{label}</span>
   </div>
-  <div class="text-lg font-bold text-text-primary leading-tight">{value}</div>
+  <div class="flex items-baseline gap-2">
+    <div class="text-lg font-bold text-text-primary leading-tight">{value}</div>
+    {#if delta !== null}
+      <span class="text-xs font-medium {deltaGood === null ? 'text-text-muted' : deltaGood ? 'text-green' : 'text-red'}">
+        {delta > 0 ? '▲' : delta < 0 ? '▼' : '•'} {Math.abs(delta).toFixed(0)}%
+      </span>
+    {/if}
+  </div>
   {#if subtitle}
     <div class="text-xs text-text-muted mt-0.5">{subtitle}</div>
   {/if}

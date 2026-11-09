@@ -6,6 +6,7 @@
   import { settings, saveSettings } from '$lib/stores/settings';
   import type { Settings } from '$lib/types';
   import { onMount } from 'svelte';
+  import { enable as enableAutostart, disable as disableAutostart, isEnabled as isAutostartEnabled } from '@tauri-apps/plugin-autostart';
   import { t } from '$lib/i18n';
 
   export let open: boolean;
@@ -18,9 +19,36 @@
   let updateError: string = '';
   let appVersion: string = '';
 
+  let autostart = false;
+  let telemetryEnabled: boolean | null = null;
+  let telemetryConfirm = false;
+  let telemetryError = '';
+
   onMount(async () => {
     appVersion = await getVersion();
+    try { autostart = await isAutostartEnabled(); } catch { /* unsupported platform */ }
+    try { telemetryEnabled = (await invoke<{ enabled: boolean }>('get_telemetry_status')).enabled; } catch { telemetryEnabled = null; }
   });
+
+  // Applies immediately (OS-level login item), independent of the Save button.
+  async function toggleAutostart() {
+    try {
+      if (autostart) await enableAutostart(); else await disableAutostart();
+    } catch (e) {
+      autostart = !autostart;
+      console.error('autostart toggle failed:', e);
+    }
+  }
+
+  async function enableTelemetry() {
+    telemetryError = '';
+    try {
+      telemetryEnabled = (await invoke<{ enabled: boolean }>('enable_claude_telemetry')).enabled;
+      telemetryConfirm = false;
+    } catch (e) {
+      telemetryError = String(e);
+    }
+  }
 
   $: if (open) {
     localSettings = { ...$settings };
@@ -229,6 +257,32 @@
             />
             <p class="text-xs text-text-muted mt-1">{$t('set.composeDir.hint')}</p>
           {/if}
+        </div>
+
+        <!-- Launch at login -->
+        <label class="flex items-center gap-2 text-sm text-text-secondary">
+          <input type="checkbox" bind:checked={autostart} on:change={toggleAutostart} />
+          {$t('set.launchAtLogin')}
+        </label>
+
+        <!-- Claude Code telemetry -->
+        <div>
+          <div class="text-sm text-text-secondary mb-1">{$t('set.telemetry')}</div>
+          {#if telemetryEnabled}
+            <span class="text-green text-sm">{$t('set.telemetry.on')}</span>
+          {:else if telemetryConfirm}
+            <p class="text-xs text-text-muted mb-2">{$t('set.telemetry.confirm')}</p>
+            <div class="flex gap-2">
+              <button on:click={enableTelemetry} class="px-3 py-1.5 bg-blue text-crust rounded-md text-sm font-medium">{$t('set.telemetry.do')}</button>
+              <button on:click={() => (telemetryConfirm = false)} class="px-3 py-1.5 text-text-muted text-sm">{$t('set.cancel')}</button>
+            </div>
+          {:else}
+            <button
+              on:click={() => (telemetryConfirm = true)}
+              class="px-3 py-2 bg-bg-card border border-border-secondary rounded-md text-text-secondary hover:bg-bg-card-hover transition-colors text-sm"
+            >{$t('set.telemetry.enable')}</button>
+          {/if}
+          {#if telemetryError}<p class="text-xs text-red mt-1">{telemetryError}</p>{/if}
         </div>
 
         <!-- Version -->

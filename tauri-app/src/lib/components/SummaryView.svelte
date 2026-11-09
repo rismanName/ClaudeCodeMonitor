@@ -3,12 +3,8 @@
   //   Expected: cacheReadTokens * (input price - cache-read price) per model; needs a per-model price table (none exists yet).
   // TODO(anomaly): Flag cost spikes (current hour > 3x trailing 24h hourly average) with a banner + tray notification.
   //   Expected: unit-tested threshold function; user can dismiss for the day.
-  // TODO(offline-fallback): When Prometheus is unreachable, fall back to local session data (get_sessions_data)
-  //   for Total Spend / Tokens and show an "Offline - local data" badge. Expected: dashboard never blank if ~/.claude has data.
-  // TODO(forecast): Show projected month-end spend = spend so far / days elapsed * days in month, under Total Spend.
-  //   Expected: hidden for ranges shorter than 1d; unit-test the formula with a fixed date.
-  // TODO(period-compare): Show delta vs previous equal-length period on each MetricCard (reuse ComparisonCard).
-  //   Expected: green/red arrow with % change; "n/a" when previous period is 0.
+  // TODO(offline-cost): In the offline fallback, also show Total Spend from local transcripts.
+  //   Expected: cost computed in Rust from a per-model price table (shared with TODO(efficiency-cache-saved)); only tokens are shown today.
   // TODO(export): Add "Export CSV/JSON" button in the header for the selected range.
   //   Expected: Tauri save dialog; file contains the metrics shown on screen.
   import { onMount, onDestroy, tick } from 'svelte';
@@ -21,7 +17,7 @@
   import { formatCost as fmt } from '$lib/format';
   import { formatCostAxis } from '$lib/format';
   import { isConnected, lastUpdated, timeRange as timeRangeStore, customTimeRange as customTimeRangeStore, totalCost } from '$lib/stores';
-  import type { DashboardMetrics, TimeRange, CustomTimeRange } from '$lib/types';
+  import type { DashboardMetrics, TimeRange, CustomTimeRange, PreviousPeriod } from '$lib/types';
 
   let metrics: DashboardMetrics | null = null;
   let loading = true;
@@ -61,6 +57,40 @@
     fetchMetrics();
   }
 
+  // ---- Period comparison + 30-day forecast -------------------------------------------------
+  const PRESET_SECS: Record<string, number> = {
+    '15m': 900, '1h': 3600, '4h': 4 * 3600, '1d': 86400, '7d': 7 * 86400, '30d': 30 * 86400, '90d': 90 * 86400,
+  };
+
+  function rangeSeconds(range: TimeRange, custom: CustomTimeRange | null): number {
+    if (range === 'custom') return custom ? custom.end - custom.start : 0;
+    return PRESET_SECS[range] ?? 0;
+  }
+
+  let previous: PreviousPeriod | null = null;
+
+  async function fetchPrevious() {
+    const secs = rangeSeconds($timeRangeStore, $customTimeRangeStore);
+    if (secs <= 0) { previous = null; return; }
+    try {
+      previous = await invoke<PreviousPeriod>('get_previous_period', {
+        rangeSecs: secs,
+        prometheusUrl: $settings.prometheusUrl,
+      });
+    } catch {
+      previous = null; // deltas are optional; hide them on failure
+    }
+  }
+
+  /** % change, or null when the previous value is 0 (undefined growth). */
+  function pctDelta(cur: number, prev: number | undefined): number | null {
+    return prev && prev > 0 ? ((cur - prev) / prev) * 100 : null;
+  }
+
+  $: rangeSecs = rangeSeconds($timeRangeStore, $customTimeRangeStore);
+  // Linear extrapolation of the selected range to 30 days; hidden for ranges shorter than 1 day.
+  $: forecast30 = metrics && rangeSecs >= 86400 ? (metrics.totalCostUsd / rangeSecs) * 30 * 86400 : null;
+
   async function fetchMetrics() {
     // Update tracked URL on each fetch
     previousPrometheusUrl = $settings.prometheusUrl;
@@ -82,6 +112,7 @@
       totalCost.set(metrics.totalCostUsd);
       isConnected.set(true);
       lastUpdated.set(new Date());
+      void fetchPrevious();
 
       // Update system tray with cost and connection status
       try {
@@ -370,6 +401,8 @@
     <div class="bg-red/10 border border-red/50 rounded-md p-3 mb-4">
       <p class="text-xs text-red">{error}</p>
     </div>
+    <p class="text-xs text-text-muted mb-3">{$t('offline.note')}</p>
+    <UsageWindowCard />
   {:else if metrics}
     <!-- Key Metrics Section -->
     <div class="mb-4">
@@ -379,10 +412,13 @@
       </div>
       <!-- First row: Total Spend, Active Time, Total Tokens -->
       <div class="grid grid-cols-3 gap-2 mb-2">
-        <MetricCard label={$t('dash.totalSpend')} value={formatCost(metrics.totalCostUsd)} subtitle={getTimeRangeLabel($timeRangeStore)} color="green" highlight={true} />
-        <MetricCard label={$t('dash.activeTime')} value={formatTime(metrics.activeTimeSeconds)} subtitle={$t('dash.activeTime.sub')} color="cyan" highlight={true} />
-        <MetricCard label={$t('dash.totalTokens')} value={formatTokens(metrics.totalTokens)} subtitle={$t('dash.totalTokens.sub')} color="purple" highlight={true} />
+        <MetricCard label={$t('dash.totalSpend')} value={formatCost(metrics.totalCostUsd)} subtitle={getTimeRangeLabel($timeRangeStore)} color="green" highlight={true} delta={pctDelta(metrics.totalCostUsd, previous?.totalCostUsd)} lowerIsBetter={true} />
+        <MetricCard label={$t('dash.activeTime')} value={formatTime(metrics.activeTimeSeconds)} subtitle={$t('dash.activeTime.sub')} color="cyan" highlight={true} delta={pctDelta(metrics.activeTimeSeconds, previous?.activeTimeSeconds)} />
+        <MetricCard label={$t('dash.totalTokens')} value={formatTokens(metrics.totalTokens)} subtitle={$t('dash.totalTokens.sub')} color="purple" highlight={true} delta={pctDelta(metrics.totalTokens, previous?.totalTokens)} />
       </div>
+      {#if forecast30 !== null}
+        <div class="text-xs text-text-muted mb-2">{$t('dash.forecast')}: <span class="text-text-secondary">{formatCost(forecast30)}</span></div>
+      {/if}
       <!-- Second row: Lines Added, Lines Removed, Commits, PRs -->
       <div class="grid grid-cols-4 gap-2">
         <MetricCard label={$t('dash.linesAdded')} value={`+${metrics.linesAdded.toLocaleString()}`} subtitle={$t('dash.linesAdded.sub')} color="green" />

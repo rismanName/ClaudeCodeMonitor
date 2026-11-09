@@ -370,3 +370,52 @@ pub async fn get_prometheus_health(
     println!("get_prometheus_health: fetch_prometheus_health returned");
     result
 }
+
+/// Totals for the period immediately before the current one (same length), used for "vs previous" deltas.
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviousPeriod {
+    pub total_cost_usd: f64,
+    pub total_tokens: f64,
+    pub active_time_seconds: f64,
+}
+
+#[tauri::command]
+pub async fn get_previous_period(
+    range_secs: i64,
+    prometheus_url: String,
+) -> Result<PreviousPeriod, String> {
+    if range_secs <= 0 {
+        return Err("range_secs must be positive".into());
+    }
+    let client = PrometheusClient::new(&prometheus_url);
+    let q = |metric: &str| {
+        format!(
+            "sum(increase({}[{}s] offset {}s))",
+            metric, range_secs, range_secs
+        )
+    };
+    let mut out = [0.0f64; 3];
+    for (i, metric) in [
+        "claude_code_cost_usage_USD_total",
+        "claude_code_token_usage_tokens_total",
+        "claude_code_active_time_seconds_total",
+    ]
+    .iter()
+    .enumerate()
+    {
+        out[i] = client
+            .query(&q(metric))
+            .await
+            .map_err(|e| e.to_string())?
+            .first()
+            .and_then(|r| r.value.as_ref())
+            .and_then(|(_, v)| v.parse::<f64>().ok())
+            .unwrap_or(0.0);
+    }
+    Ok(PreviousPeriod {
+        total_cost_usd: out[0],
+        total_tokens: out[1],
+        active_time_seconds: out[2],
+    })
+}

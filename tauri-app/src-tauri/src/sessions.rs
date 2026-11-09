@@ -1,8 +1,5 @@
 // tauri-app/src-tauri/src/sessions.rs
 
-// TODO(per-project): Aggregate cost/tokens by project (derive from ~/.claude/projects/<dir> name).
-//   Expected: new command get_project_breakdown -> [{project, costUsd, tokens, sessions}] sorted by cost desc,
-//   shown as a table in a new "Projects" sidebar view. Prometheus has no project label, so this is local-only data.
 use crate::prometheus::PrometheusClient;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

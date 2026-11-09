@@ -5,6 +5,7 @@ mod prometheus;
 mod prometheus_health;
 mod sessions;
 mod stack;
+mod telemetry;
 mod tray;
 mod usage;
 
@@ -17,8 +18,6 @@ use tauri::{
 use tray::TrayState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-// TODO(autostart): Launch the app at macOS login (tauri-plugin-autostart) — add plugin + capability
-//   + "Launch at login" toggle in Settings. Expected: after reboot the tray icon appears without user action.
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -26,8 +25,15 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_notification::init())
         .manage(TrayState::new())
         .setup(|app| {
+            #[cfg(desktop)]
+            app.handle().plugin(tauri_plugin_autostart::init(
+                tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+                None,
+            ))?;
+
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show = MenuItem::with_id(app, "show", "Open Dashboard", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show, &quit])?;
@@ -75,6 +81,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_dashboard_metrics,
+            commands::get_previous_period,
             commands::test_connection,
             commands::discover_metrics,
             commands::get_prometheus_health,
@@ -82,6 +89,9 @@ pub fn run() {
             insights::get_local_stats_cache,
             sessions::get_sessions_data,
             tray::update_tray_stats,
+            tray::set_tray_alert,
+            telemetry::get_telemetry_status,
+            telemetry::enable_claude_telemetry,
             stack::ensure_monitoring_stack,
             usage::get_usage_windows,
         ])

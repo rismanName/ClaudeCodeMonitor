@@ -216,3 +216,9 @@ export interface PrometheusHealthMetrics {
   memoryOverTime: TimeSeriesPoint[];
   samplesRateOverTime: TimeSeriesPoint[];
 }
+
+export interface PreviousPeriod {
+  totalCostUsd: number;
+  totalTokens: number;
+  activeTimeSeconds: number;
+}
