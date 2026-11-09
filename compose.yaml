@@ -20,7 +20,7 @@ services:
     container_name: prometheus
     restart: always
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"  # localhost only: the admin API below must not be reachable from the network
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -31,6 +31,7 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--storage.tsdb.retention.time=720h'
       - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'  # required by the app's Backup button (TSDB snapshot)
 
 volumes:
   prometheus_data:
