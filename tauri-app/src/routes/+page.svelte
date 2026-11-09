@@ -12,7 +12,7 @@
     BudgetBanner,
     SpikeBanner,
   } from '$lib/components';
-  import { isConnected } from '$lib/stores';
+  import { isConnected, requestedView } from '$lib/stores';
   import { invoke } from '@tauri-apps/api/core';
   import { loadSettings, settings } from '$lib/stores/settings';
   import { t, type TranslationKey } from '$lib/i18n';
@@ -43,6 +43,11 @@
 
   let activeView = 'summary';
   let showSettings = false;
+
+  $: if ($requestedView) {
+    activeView = $requestedView;
+    requestedView.set(null);
+  }
 
   function handleNavigate(view: string) {
     activeView = view;

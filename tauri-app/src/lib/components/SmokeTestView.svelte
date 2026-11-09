@@ -210,8 +210,8 @@
               </div>
             {/if}
             <div>
-              <div class="text-sm font-semibold text-text-primary">{test.name}</div>
-              <div class="text-xs text-text-muted">{test.subtitle}</div>
+              <div class="text-sm font-semibold text-text-primary">{$tx(test.name)}</div>
+              <div class="text-xs text-text-muted">{$tx(test.subtitle ?? '')}</div>
             </div>
           </div>
           {#if test.time !== undefined}

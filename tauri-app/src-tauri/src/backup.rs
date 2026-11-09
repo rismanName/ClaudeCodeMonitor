@@ -3,9 +3,7 @@
 //! Requires Prometheus to run with `--web.enable-admin-api` (set in compose.yaml).
 //! The snapshot is created inside the container, copied to ~/Downloads, then removed from the container.
 //!
-//! TODO(restore): Import a backup folder back into the prometheus_data volume.
-//!   Expected: stop stack, copy snapshot blocks into /prometheus, start stack, verify `up` returns data; confirm dialog first
-//!   because it overwrites current data.
+//! Restore is merge-only: blocks from a backup are copied into the data volume, nothing is deleted.
 
 use std::process::Command;
 
@@ -82,9 +80,73 @@ pub async fn backup_prometheus(prometheus_url: String) -> Result<BackupResult, S
     .map_err(|e| e.to_string())?
 }
 
+const BACKUP_PREFIX: &str = "prometheus-backup-";
+
+/// Backup folders found in ~/Downloads, newest first (names only).
+#[tauri::command]
+pub fn list_backups() -> Vec<String> {
+    let Some(dir) = dirs::download_dir() else { return vec![] };
+    let mut names: Vec<String> = std::fs::read_dir(dir)
+        .map(|rd| {
+            rd.flatten()
+                .filter(|e| e.path().is_dir())
+                .filter_map(|e| e.file_name().into_string().ok())
+                .filter(|n| n.strip_prefix(BACKUP_PREFIX).map(valid_snapshot_name).unwrap_or(false))
+                .collect()
+        })
+        .unwrap_or_default();
+    names.sort_by(|a, b| b.cmp(a));
+    names
+}
+
+/// A TSDB block directory is a 26-char ULID.
+fn looks_like_block(name: &str) -> bool {
+    name.len() == 26 && name.chars().all(|c| c.is_ascii_alphanumeric())
+}
+
+/// Merge a backup (from `list_backups`) into the running Prometheus data volume.
+/// Sequence: stop container -> copy blocks in -> start -> fix ownership (docker cp writes root-owned files).
+#[tauri::command]
+pub async fn restore_prometheus(backup_name: String) -> Result<(), String> {
+    if !backup_name.strip_prefix(BACKUP_PREFIX).map(valid_snapshot_name).unwrap_or(false) {
+        return Err("invalid backup name".into());
+    }
+    tokio::task::spawn_blocking(move || {
+        let engine = find_engine().ok_or("docker/podman not found")?;
+        let src = dirs::download_dir().ok_or("Could not find Downloads folder")?.join(&backup_name);
+        let has_blocks = std::fs::read_dir(&src)
+            .map_err(|e| e.to_string())?
+            .flatten()
+            .any(|e| looks_like_block(&e.file_name().to_string_lossy()));
+        if !has_blocks {
+            return Err("folder contains no TSDB blocks".into());
+        }
+
+        let run = |args: &[&str]| -> Result<(), String> {
+            let o = Command::new(&engine).args(args).output().map_err(|e| e.to_string())?;
+            if o.status.success() { Ok(()) } else { Err(String::from_utf8_lossy(&o.stderr).trim().to_string()) }
+        };
+
+        run(&["stop", CONTAINER])?;
+        // Always try to bring the container back, even if the copy failed.
+        let copy = Command::new(&engine)
+            .arg("cp")
+            .arg(format!("{}/.", src.display()))
+            .arg(format!("{CONTAINER}:/prometheus/"))
+            .output()
+            .map_err(|e| e.to_string())
+            .and_then(|o| if o.status.success() { Ok(()) } else { Err(String::from_utf8_lossy(&o.stderr).trim().to_string()) });
+        run(&["start", CONTAINER])?;
+        copy?;
+        run(&["exec", "-u", "root", CONTAINER, "chown", "-R", "65534:65534", "/prometheus"])
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 #[cfg(test)]
 mod tests {
-    use super::valid_snapshot_name;
+    use super::{looks_like_block, valid_snapshot_name};
 
     #[test]
     fn accepts_prometheus_names_and_rejects_paths() {
@@ -92,5 +154,12 @@ mod tests {
         assert!(!valid_snapshot_name("../etc"));
         assert!(!valid_snapshot_name("a b"));
         assert!(!valid_snapshot_name(""));
+    }
+
+    #[test]
+    fn recognizes_block_dirs() {
+        assert!(looks_like_block("01M6HVDDKBQ63HMKVPPD5134Y5"));
+        assert!(!looks_like_block("wal"));
+        assert!(!looks_like_block("chunks_head"));
     }
 }

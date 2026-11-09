@@ -17,6 +17,7 @@ use serde::Serialize;
 /// must set `composeDir` in Settings.
 const DEFAULT_COMPOSE_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
 
+#[cfg(target_os = "macos")]
 const ENGINE_CANDIDATES: &[&str] = &[
     "/usr/local/bin/docker",
     "/opt/homebrew/bin/docker",
@@ -24,6 +25,38 @@ const ENGINE_CANDIDATES: &[&str] = &[
     "/usr/local/bin/podman",
     "/opt/homebrew/bin/podman",
 ];
+
+#[cfg(target_os = "linux")]
+const ENGINE_CANDIDATES: &[&str] = &[
+    "/usr/bin/docker",
+    "/usr/local/bin/docker",
+    "/usr/bin/podman",
+    "/usr/local/bin/podman",
+];
+
+#[cfg(target_os = "windows")]
+const ENGINE_CANDIDATES: &[&str] = &[
+    r"C:\Program Files\Docker\Docker\resources\bin\docker.exe",
+    r"C:\Program Files\RedHat\Podman\podman.exe",
+];
+
+/// Best-effort start of the container engine app/service. Returns immediately; the caller polls `engine_ready`.
+/// NOTE: the Linux and Windows branches are written from vendor docs and have NOT been run on those platforms.
+fn launch_engine() {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = Command::new("open").args(["-ga", "Docker"]).status();
+    }
+    #[cfg(target_os = "linux")]
+    {
+        // Docker Desktop for Linux runs as a user service; plain Docker Engine needs root, so it is not started here.
+        let _ = Command::new("systemctl").args(["--user", "start", "docker-desktop"]).status();
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let _ = Command::new(r"C:\Program Files\Docker\Docker\Docker Desktop.exe").spawn();
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -75,12 +108,7 @@ fn ensure_blocking(compose_dir: Option<String>) -> StackStatus {
     };
 
     if !engine_ready(&engine) {
-        // TODO(stack): Linux/Windows engine launch — only macOS `open -a Docker` is implemented.
-        //   Expected: start docker service / Docker Desktop per platform, same 90s wait.
-        #[cfg(target_os = "macos")]
-        {
-            let _ = Command::new("open").args(["-ga", "Docker"]).status();
-        }
+        launch_engine();
 
         let deadline = Instant::now() + Duration::from_secs(90);
         while !engine_ready(&engine) {

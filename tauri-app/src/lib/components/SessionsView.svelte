@@ -5,7 +5,8 @@
   import { invoke } from '@tauri-apps/api/core';
   import { SessionDetailModal, TimeRangePicker, ViewHeader } from '$lib/components';
   import { settings } from '$lib/stores/settings';
-  import { timeRange as timeRangeStore } from '$lib/stores';
+  import { timeRange as timeRangeStore, sessionDateFilter } from '$lib/stores';
+  import { t } from '$lib/i18n';
   import type { SessionsData, SessionMetrics, TimeRange } from '$lib/types';
 
   let data: SessionsData | null = null;
@@ -32,7 +33,8 @@
     error = null;
     try {
       data = await invoke<SessionsData>('get_sessions_data', {
-        timeRange: $timeRangeStore,
+        // A date picked from the heatmap can be up to 90 days old: fetch the widest range, filter client-side.
+        timeRange: $sessionDateFilter ? '90d' : $timeRangeStore,
         prometheusUrl: $settings.prometheusUrl,
       });
     } catch (e) {
@@ -90,9 +92,23 @@
   $: mostTokensSession = data?.sessions.slice().sort((a, b) => b.totalTokens - a.totalTokens)[0];
   $: longestSession = data?.sessions.slice().sort((a, b) => b.activeTimeSeconds - a.activeTimeSeconds)[0];
 
+  /** Local YYYY-MM-DD of a session timestamp (ms, or seconds if it looks like seconds). */
+  function sessionDay(ts: number): string {
+    const d = new Date(ts < 1e12 ? ts * 1000 : ts);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  let lastFilter: string | null = null;
+  // Refetch when the date filter is set or cleared (it changes the fetched range).
+  $: if ($sessionDateFilter !== lastFilter) {
+    lastFilter = $sessionDateFilter;
+    if (data) fetchSessions();
+  }
+
   // Sorted sessions for table (exclude zero token sessions)
   $: sortedSessions = data?.sessions
     .filter(s => s.totalTokens > 0)
+    .filter(s => !$sessionDateFilter || sessionDay(s.timestamp) === $sessionDateFilter)
     .sort((a, b) => {
       switch (sortOption) {
         case 'cost_high': return b.totalCostUsd - a.totalCostUsd;
@@ -117,6 +133,13 @@
       <TimeRangePicker value={$timeRangeStore} onChange={handleTimeRangeChange} />
     </svelte:fragment>
   </ViewHeader>
+
+  {#if $sessionDateFilter}
+    <div class="mb-3 inline-flex items-center gap-2 rounded-md border border-border-secondary bg-bg-card px-2 py-1 text-xs text-text-secondary">
+      <span>{$t('sessions.dateFilter', { d: $sessionDateFilter })}</span>
+      <button class="underline" on:click={() => sessionDateFilter.set(null)}>{$t('sessions.clearFilter')}</button>
+    </div>
+  {/if}
 
   {#if loading && !data}
     <div class="flex items-center justify-center h-32">

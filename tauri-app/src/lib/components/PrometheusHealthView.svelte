@@ -209,6 +209,39 @@
     }
   }
 
+  let restoreOpen = false;
+  let backups: string[] = [];
+  let selectedBackup = '';
+  let restoreConfirm = false;
+
+  async function toggleRestore() {
+    restoreOpen = !restoreOpen;
+    restoreConfirm = false;
+    if (!restoreOpen) return;
+    try {
+      backups = await invoke<string[]>('list_backups');
+      selectedBackup = backups[0] ?? '';
+    } catch {
+      backups = [];
+    }
+  }
+
+  async function doRestore() {
+    stackBusy = true;
+    stackMsg = null;
+    try {
+      await invoke('restore_prometheus', { backupName: selectedBackup });
+      stackMsg = { ok: true, text: $t('restore.done') };
+      restoreOpen = false;
+    } catch (e) {
+      stackMsg = { ok: false, text: String(e) };
+    } finally {
+      stackBusy = false;
+      restoreConfirm = false;
+      fetchHealth();
+    }
+  }
+
   let logsOpen = false;
   let logsText = '';
   async function toggleLogs() {
@@ -364,9 +397,32 @@
     <button disabled={stackBusy} on:click={() => stackAction('stop_monitoring_stack')} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('stack.stop')}</button>
     <button disabled={stackBusy} on:click={toggleLogs} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('stack.logs')}</button>
     <button disabled={stackBusy} on:click={backupNow} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('backup.button')}</button>
+    <button disabled={stackBusy} on:click={toggleRestore} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('restore.button')}</button>
     {#if stackBusy}<span class="text-xs text-text-muted">…</span>{/if}
     {#if stackMsg}<span class="text-xs {stackMsg.ok ? 'text-green' : 'text-red'}">{stackMsg.text}</span>{/if}
   </div>
+
+  {#if restoreOpen}
+    <div class="mb-3 rounded-md bg-bg-card border border-border-secondary p-3 text-xs text-text-secondary">
+      {#if backups.length === 0}
+        <p>{$t('restore.none')}</p>
+      {:else}
+        <label class="block mb-1" for="restore-select">{$t('restore.pick')}</label>
+        <select id="restore-select" bind:value={selectedBackup} class="w-full mb-2 bg-bg-primary border border-border-secondary rounded-md px-2 py-1 text-text-primary">
+          {#each backups as b}<option value={b}>{b}</option>{/each}
+        </select>
+        {#if restoreConfirm}
+          <p class="mb-2 text-peach">{$t('restore.confirm')}</p>
+          <div class="flex gap-2">
+            <button disabled={stackBusy} on:click={doRestore} class="px-3 py-1 bg-blue text-crust rounded-md font-medium disabled:opacity-50">{$t('restore.do')}</button>
+            <button on:click={() => (restoreConfirm = false)} class="px-3 py-1 text-text-muted">{$t('set.cancel')}</button>
+          </div>
+        {:else}
+          <button on:click={() => (restoreConfirm = true)} class="px-3 py-1 bg-bg-primary border border-border-secondary rounded-md hover:bg-bg-card-hover">{$t('restore.button')}</button>
+        {/if}
+      {/if}
+    </div>
+  {/if}
 
   {#if logsOpen}
     <pre class="mb-3 max-h-64 overflow-auto rounded-md bg-bg-card border border-border-secondary p-2 text-[10px] leading-snug text-text-secondary whitespace-pre-wrap">{logsText}</pre>
@@ -376,7 +432,7 @@
   <div class="flex items-center justify-between mb-4">
     <div class="flex-shrink-0">
       <h1 class="text-lg font-semibold text-text-primary">{$tx("Prometheus Health")}</h1>
-      <p class="text-xs text-text-muted">{getTimeRangeLabel()}</p>
+      <p class="text-xs text-text-muted">{$tx(getTimeRangeLabel())}</p>
     </div>
     <div class="flex-shrink-0">
       <TimeRangePicker
@@ -489,7 +545,7 @@
           <div class="w-1.5 h-1.5 rounded-full bg-sky"></div>
           <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Storage Over Time")}</span>
         </div>
-        <span class="text-xs text-text-muted">{getTimeRangeLabel()}</span>
+        <span class="text-xs text-text-muted">{$tx(getTimeRangeLabel())}</span>
       </div>
       <div class="h-32">
         <canvas bind:this={storageChartCanvas}></canvas>
@@ -503,7 +559,7 @@
           <div class="w-1.5 h-1.5 rounded-full bg-mauve"></div>
           <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Memory Over Time")}</span>
         </div>
-        <span class="text-xs text-text-muted">{getTimeRangeLabel()}</span>
+        <span class="text-xs text-text-muted">{$tx(getTimeRangeLabel())}</span>
       </div>
       <div class="h-32">
         <canvas bind:this={memoryChartCanvas}></canvas>
@@ -591,9 +647,9 @@
         <!-- Overall Health Status -->
         <div class="text-center">
           <div class="text-lg font-bold" style="color: {health.color}">
-            {health.label === 'Healthy' ? 'OK' : health.label}
+            {health.label === 'Healthy' ? 'OK' : $tx(health.label)}
           </div>
-          <div class="text-xs text-text-muted">{health.label === 'Healthy' ? 'Healthy' : 'Unhealthy'}</div>
+          <div class="text-xs text-text-muted">{$tx(health.label === 'Healthy' ? 'Healthy' : 'Unhealthy')}</div>
           <div class="text-xs text-text-muted mt-1">v{metrics.version || 'N/A'}</div>
         </div>
 

@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { DailyActivityPoint } from '$lib/types';
+  import { createEventDispatcher } from 'svelte';
   import { t } from '$lib/i18n';
 
-  // TODO(heatmap-click): Clicking a day should filter Session History to that date.
-  //   Expected: emit `select` with the YYYY-MM-DD key; +page switches to the sessions view with a date filter (none exists yet).
+  const dispatch = createEventDispatcher<{ select: string }>();
 
   /** Daily message counts keyed by YYYY-MM-DD (from stats-cache). */
   export let points: DailyActivityPoint[];
@@ -60,11 +60,14 @@
     {#each grid as col}
       <div class="flex flex-col gap-1">
         {#each col as cell}
-          <div
-            class="w-3.5 h-3.5 rounded-sm"
+          <button
+            type="button"
+            class="w-3.5 h-3.5 rounded-sm p-0 border-0 {cell.value > 0 ? 'cursor-pointer hover:ring-1 hover:ring-white/60' : 'cursor-default'}"
             style="background: {cell.future ? 'transparent' : shades[level(cell.value)]};"
             title={cell.future ? '' : `${cell.key}: ${cell.value.toLocaleString()}`}
-          ></div>
+            disabled={cell.future || cell.value <= 0}
+            on:click={() => dispatch('select', cell.key)}
+          ></button>
         {/each}
       </div>
     {/each}

@@ -248,7 +248,7 @@
   <div class="flex items-center justify-between mb-4">
     <div>
       <h1 class="text-lg font-semibold text-text-primary">{$tx("Token Metrics")}</h1>
-      <p class="text-xs text-text-muted">{getTimeRangeLabel($timeRangeStore)}</p>
+      <p class="text-xs text-text-muted">{$tx(getTimeRangeLabel($timeRangeStore))}</p>
     </div>
     <TimeRangePicker value={$timeRangeStore} onChange={handleTimeRangeChange} />
   </div>
@@ -269,7 +269,7 @@
     {@const cacheCreatePercent = metrics.totalTokens > 0 ? (metrics.cacheCreationTokens / metrics.totalTokens) * 100 : 0}
     <!-- Row 1: Total Tokens, Input, Output -->
     <div class="grid grid-cols-3 gap-2 mb-2">
-      <MetricCard label={$tx("Total Tokens")} value={formatTokens(metrics.totalTokens)} subtitle={getTimeRangeLabel($timeRangeStore)} color="cyan" highlight={true} />
+      <MetricCard label={$tx("Total Tokens")} value={formatTokens(metrics.totalTokens)} subtitle={$tx(getTimeRangeLabel($timeRangeStore))} color="cyan" highlight={true} />
       <MetricCard label={$tx("Input")} value={formatTokens(metrics.inputTokens)} subtitle="{inputPercent.toFixed(1)}%" color="green" showBar barPercent={inputPercent} />
       <MetricCard label={$tx("Output")} value={formatTokens(metrics.outputTokens)} subtitle="{outputPercent.toFixed(1)}%" color="purple" showBar barPercent={outputPercent} />
     </div>
@@ -283,7 +283,7 @@
     <div class="bg-bg-card rounded-md p-4 mb-4">
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$tx("Total Tokens Over Time")}</span>
-        <span class="text-xs text-text-muted">{getTimeRangeLabel($timeRangeStore)}</span>
+        <span class="text-xs text-text-muted">{$tx(getTimeRangeLabel($timeRangeStore))}</span>
       </div>
       <div class="h-40"><canvas bind:this={tokensOverTimeCanvas}></canvas></div>
     </div>

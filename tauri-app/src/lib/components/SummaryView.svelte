@@ -5,7 +5,7 @@
   import { Chart, registerables } from 'chart.js';
   import { ViewHeader, MetricCard, TimeRangePicker, UsageWindowCard } from '$lib/components';
   import { settings } from '$lib/stores/settings';
-  import { t } from '$lib/i18n';
+  import { t, tx } from '$lib/i18n';
   import { formatCost as fmt } from '$lib/format';
   import { formatCostAxis } from '$lib/format';
   import { isConnected, lastUpdated, timeRange as timeRangeStore, customTimeRange as customTimeRangeStore, totalCost } from '$lib/stores';
@@ -406,7 +406,7 @@
     <!-- Left: Dashboard title -->
     <div class="flex-shrink-0">
       <h1 class="text-lg font-semibold text-text-primary">{$t('dash.title')}</h1>
-      <p class="text-xs text-text-muted">{getTimeRangeLabel($timeRangeStore)}</p>
+      <p class="text-xs text-text-muted">{$tx(getTimeRangeLabel($timeRangeStore))}</p>
     </div>
 
     <!-- Right: Export + time range picker -->
@@ -447,7 +447,7 @@
       </div>
       <!-- First row: Total Spend, Active Time, Total Tokens -->
       <div class="grid grid-cols-3 gap-2 mb-2">
-        <MetricCard label={$t('dash.totalSpend')} value={formatCost(metrics.totalCostUsd)} subtitle={getTimeRangeLabel($timeRangeStore)} color="green" highlight={true} delta={pctDelta(metrics.totalCostUsd, previous?.totalCostUsd)} lowerIsBetter={true} />
+        <MetricCard label={$t('dash.totalSpend')} value={formatCost(metrics.totalCostUsd)} subtitle={$tx(getTimeRangeLabel($timeRangeStore))} color="green" highlight={true} delta={pctDelta(metrics.totalCostUsd, previous?.totalCostUsd)} lowerIsBetter={true} />
         <MetricCard label={$t('dash.activeTime')} value={formatTime(metrics.activeTimeSeconds)} subtitle={$t('dash.activeTime.sub')} color="cyan" highlight={true} delta={pctDelta(metrics.activeTimeSeconds, previous?.activeTimeSeconds)} />
         <MetricCard label={$t('dash.totalTokens')} value={formatTokens(metrics.totalTokens)} subtitle={$t('dash.totalTokens.sub')} color="purple" highlight={true} delta={pctDelta(metrics.totalTokens, previous?.totalTokens)} />
       </div>
@@ -483,7 +483,7 @@
     <div class="bg-bg-card rounded-md p-4 mb-4">
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$t('dash.costOverTime')}</span>
-        <span class="text-xs text-text-muted">{getTimeRangeLabel($timeRangeStore)}</span>
+        <span class="text-xs text-text-muted">{$tx(getTimeRangeLabel($timeRangeStore))}</span>
       </div>
       <div class="h-40">
         <canvas bind:this={costChartCanvas}></canvas>

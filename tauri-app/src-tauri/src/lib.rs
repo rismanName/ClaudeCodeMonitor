@@ -101,6 +101,8 @@ pub fn run() {
             stack::restart_monitoring_stack,
             stack::get_stack_logs,
             backup::backup_prometheus,
+            backup::list_backups,
+            backup::restore_prometheus,
             export::save_export,
             anomaly::get_cost_spike,
             usage::get_usage_windows,

@@ -1,10 +1,9 @@
 import { derived } from 'svelte/store';
 import { settings } from '$lib/stores/settings';
 
-// TODO(i18n): Remaining English strings that are built in script code, not templates: TimeRangePicker preset labels,
-//   getTimeRangeLabel() in Dashboard/Health, Health "issues" messages, Smoke Test result text, Sessions/Stats Cache error
-//   paragraphs, chart dataset labels/tooltips, and the Rust tray title. Expected: with language='id' no English UI strings
-//   remain (except metric/model names); migrate to $t keys or add to idPhrases and wrap with $tx.
+// TODO(i18n): Still English: dynamic messages with embedded numbers/errors (e.g. "Found N metrics", Health "N compaction failures"),
+//   Sessions/Stats Cache error paragraphs, chart dataset labels/tooltips, the notification title, and the Rust tray title.
+//   Expected: with language='id' no English UI strings remain (except metric/model names); add to idPhrases/$t keys and wrap with $tx.
 const en = {
   // Sidebar
   'nav.prometheus': 'Prometheus Data',
@@ -82,6 +81,12 @@ const en = {
   'usage.cacheSaved': 'saved by cache',
   'stack.logs': 'Logs',
   'backup.button': 'Backup',
+  'restore.button': 'Restore',
+  'restore.none': 'No backups found in ~/Downloads (folders named prometheus-backup-…).',
+  'restore.pick': 'Choose a backup',
+  'restore.confirm': 'Prometheus will restart briefly. Backup blocks are merged into the current data; nothing is deleted.',
+  'restore.do': 'Restore now',
+  'restore.done': 'Restore finished.',
   'backup.needAdmin': 'Backup needs Prometheus started with --web.enable-admin-api (add it to compose.yaml, recreate the container). Note: port 9090 is open to your network by default; bind it to 127.0.0.1 first.',
 
   // Efficiency
@@ -122,6 +127,8 @@ const en = {
   'stack.error.no_compose': 'compose.yaml not found. Set the folder in Settings.',
   'stack.error.compose_failed': 'Failed to run compose up.',
   'stack.dismiss': 'Dismiss',
+  'sessions.dateFilter': 'Date: {d}',
+  'sessions.clearFilter': 'Clear filter',
   'stack.controls': 'Monitoring stack',
   'stack.start': 'Start',
   'stack.restart': 'Restart',
@@ -208,6 +215,12 @@ const id: Record<TranslationKey, string> = {
   'usage.cacheSaved': 'hemat dari cache',
   'stack.logs': 'Log',
   'backup.button': 'Backup',
+  'restore.button': 'Pulihkan',
+  'restore.none': 'Tidak ada backup di ~/Downloads (folder bernama prometheus-backup-…).',
+  'restore.pick': 'Pilih backup',
+  'restore.confirm': 'Prometheus akan restart sebentar. Blok backup digabungkan ke data saat ini; tidak ada yang dihapus.',
+  'restore.do': 'Pulihkan sekarang',
+  'restore.done': 'Pemulihan selesai.',
   'backup.needAdmin': 'Backup butuh Prometheus yang dijalankan dengan --web.enable-admin-api (tambahkan di compose.yaml, lalu buat ulang container). Catatan: port 9090 secara default terbuka ke jaringanmu; ikat dulu ke 127.0.0.1.',
 
   'eff.title': 'Efisiensi',
@@ -245,6 +258,8 @@ const id: Record<TranslationKey, string> = {
   'stack.error.no_compose': 'compose.yaml tidak ditemukan. Atur foldernya di Pengaturan.',
   'stack.error.compose_failed': 'Gagal menjalankan compose up.',
   'stack.dismiss': 'Tutup',
+  'sessions.dateFilter': 'Tanggal: {d}',
+  'sessions.clearFilter': 'Hapus filter',
   'stack.controls': 'Stack monitoring',
   'stack.start': 'Nyalakan',
   'stack.restart': 'Mulai ulang',
@@ -377,7 +392,33 @@ const idPhrases: Record<string, string> = {
   "WAL:": "WAL:",
   "running": "berjalan",
   "samples": "sampel",
-  "targets": "target"
+  "targets": "target",
+  "Past 15 minutes": "15 menit terakhir",
+  "Past hour": "1 jam terakhir",
+  "Past 4 hours": "4 jam terakhir",
+  "Past day": "24 jam terakhir",
+  "Past week": "7 hari terakhir",
+  "Past month": "30 hari terakhir",
+  "Past 3 months": "90 hari terakhir",
+  "Custom range": "Rentang kustom",
+  "Custom Range": "Rentang Kustom",
+  "Healthy": "Sehat",
+  "Unhealthy": "Tidak sehat",
+  "Warning": "Peringatan",
+  "Degraded": "Menurun",
+  "Prometheus Connection": "Koneksi Prometheus",
+  "Prometheus API": "API Prometheus",
+  "Claude Code Metrics": "Metrik Claude Code",
+  "Query Execution": "Eksekusi Query",
+  "Checking connectivity...": "Memeriksa konektivitas...",
+  "Testing API endpoints...": "Menguji endpoint API...",
+  "Discovering metrics...": "Mencari metrik...",
+  "Testing PromQL queries...": "Menguji query PromQL...",
+  "Connection refused": "Koneksi ditolak",
+  "Skipped - no connection": "Dilewati - tidak ada koneksi",
+  "API endpoints responding": "Endpoint API merespons",
+  "PromQL queries working": "Query PromQL berjalan",
+  "No claude_code_ metrics found": "Metrik claude_code_ tidak ditemukan"
 };
 
 /** `$tx('English text')` -> Indonesian when language is 'id', otherwise the text unchanged. */

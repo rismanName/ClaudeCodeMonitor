@@ -8,4 +8,8 @@ export const timeRange = writable<TimeRange>('1d');
 export const customTimeRange = writable<CustomTimeRange | null>(null);
 export const isConnected = writable(false);
 export const lastUpdated = writable<Date | null>(null);
+/** YYYY-MM-DD: when set, Session History shows only that local day (set from the activity heatmap). */
+export const sessionDateFilter = writable<string | null>(null);
+/** One-shot navigation request consumed by +page.svelte. */
+export const requestedView = writable<string | null>(null);
 export const totalCost = writable<number>(0);

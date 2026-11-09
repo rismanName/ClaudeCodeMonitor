@@ -6,6 +6,7 @@
   import { Chart, registerables } from 'chart.js';
   import { ViewHeader, MetricCard, ActivityHeatmap } from '$lib/components';
   import { settings } from '$lib/stores/settings';
+  import { sessionDateFilter, requestedView } from '$lib/stores';
   import type { LocalStatsCacheData } from '$lib/types';
 
   let data: LocalStatsCacheData | null = null;
@@ -261,7 +262,7 @@
       <div class="h-32"><canvas bind:this={dailyChartCanvas}></canvas></div>
     </div>
 
-    <ActivityHeatmap points={data.dailyActivity} />
+    <ActivityHeatmap points={data.dailyActivity} on:select={(e) => { sessionDateFilter.set(e.detail); requestedView.set('sessions'); }} />
 
     <!-- Token Usage by Model -->
     <div class="bg-bg-card rounded-md p-4 mb-3">
