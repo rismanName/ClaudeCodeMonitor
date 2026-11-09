@@ -3,11 +3,13 @@
   import { invoke } from '@tauri-apps/api/core';
   import { loadSettings, settings } from '$lib/stores/settings';
   import { formatCost, formatModelName } from '$lib/format';
+  import { lastWeeklyReset, nextWeeklyReset, formatClock, formatResetDay } from '$lib/usageWindow';
   import { t } from '$lib/i18n';
   import type { DashboardMetrics } from '$lib/types';
 
   interface UsageWindows {
     blockActive: boolean;
+    blockEnd: number;
     blockTokens: number;
     blockCostUsd: number;
     minutesRemaining: number;
@@ -23,13 +25,11 @@
   let restarting = false;
   let timer: ReturnType<typeof setInterval>;
 
-  // Pinned = desktop-widget mode (stays open on top). Kept in localStorage, which both windows share.
-  const PIN_KEY = 'widget-pinned';
+  // Pinned = desktop-widget mode (stays open on top). The backend persists it and restores the widget at launch.
   let pinned = false;
 
   async function setPinned(v: boolean) {
     pinned = v;
-    try { localStorage.setItem(PIN_KEY, v ? '1' : '0'); } catch { /* not persisted */ }
     try { await invoke('set_popover_pinned', { pinned: v }); } catch { /* backend unavailable */ }
   }
 
@@ -39,7 +39,10 @@
       // Totals come from Prometheus (not summed from sessions, which only lists sessions present in history.jsonl).
       m = await invoke<DashboardMetrics>('get_dashboard_metrics', { timeRange: '1d', prometheusUrl: $settings.prometheusUrl });
     } catch { /* keep last value */ }
-    try { usage = await invoke<UsageWindows>('get_usage_windows', { pricingProvider: $settings.pricingProvider }); } catch { usage = null; }
+    try {
+      const weekStart = Math.floor(lastWeeklyReset($settings.weeklyResetDay, $settings.weeklyResetTime).getTime() / 1000);
+      usage = await invoke<UsageWindows>('get_usage_windows', { pricingProvider: $settings.pricingProvider, weekStart });
+    } catch { usage = null; }
     try { stack = await invoke<SetupStatus>('get_setup_status'); } catch { stack = null; }
   }
 
@@ -71,6 +74,11 @@
   $: barColor = pct >= 100 ? 'bg-red' : pct >= 80 ? 'bg-peach' : 'bg-green';
   $: limit = $settings.planLimitTokens;
   $: blockPct = usage && limit > 0 ? Math.min(100, (usage.blockTokens / limit) * 100) : 0;
+  $: weekLimit = $settings.weeklyLimitTokens;
+  $: weekPct = usage && weekLimit > 0 ? Math.min(100, (usage.weekTokens / weekLimit) * 100) : 0;
+  $: sessionResets = usage?.blockActive ? $t('usage.resetsAt', { t: formatClock(new Date(usage.blockEnd * 1000)) }) : $t('usage.noSession');
+  $: weekResets = $t('usage.resetsOn', { d: formatResetDay(nextWeeklyReset($settings.weeklyResetDay, $settings.weeklyResetTime), $settings.language) });
+  const barFor = (p: number) => (p >= 90 ? 'bg-red' : p >= 70 ? 'bg-peach' : 'bg-green');
   $: stackOk = !!stack && stack.prometheusUp && stack.otlpUp;
 
   // Token split (input / output / cache read / cache written) as a stacked bar.
@@ -109,9 +117,7 @@
   })();
 
   onMount(() => {
-    try { pinned = localStorage.getItem(PIN_KEY) === '1'; } catch { /* default unpinned */ }
-    // Restore the widget on launch (also after login). Wait a moment so the tray icon has a screen position.
-    if (pinned) setTimeout(() => invoke('set_popover_pinned', { pinned: true }).catch(() => {}), 1500);
+    invoke<boolean>('get_popover_pinned').then((v) => (pinned = v)).catch(() => {});
     refresh();
     timer = setInterval(refresh, 30_000);
     window.addEventListener('focus', refresh); // hidden window keeps its state; refresh each time it is shown
@@ -146,11 +152,6 @@
         <div class="mt-1.5 h-1.5 rounded-full bg-bg-card overflow-hidden"><div class="h-full {barColor}" style="width: {pct}%"></div></div>
       {:else}
         <div class="mt-1 text-xs text-text-muted">{$t('budget.notSet')}</div>
-      {/if}
-      {#if usage}
-        <div class="mt-1.5 text-[11px] text-text-muted">
-          {$t('usage.week')}: <span class="text-text-secondary">{fmtTokens(usage.weekTokens)} · {$formatCost(usage.weekCostUsd)}</span>
-        </div>
       {/if}
     </div>
 
@@ -220,20 +221,26 @@
       </div>
     {/if}
 
-    <!-- 5-hour window -->
-    <div class="bg-bg-card rounded-xl px-3 py-2.5">
-      <div class="text-[11px] font-medium text-text-muted uppercase tracking-wider">{$t('usage.title')}</div>
-      {#if usage?.blockActive}
-        <div class="mt-1 flex items-baseline justify-between">
-          <span class="text-sm font-semibold text-text-primary">{fmtTokens(usage.blockTokens)} <span class="text-xs font-normal text-text-muted">· {$formatCost(usage.blockCostUsd)}</span></span>
-          <span class="text-xs text-text-muted">{$t('usage.remaining', { m: usage.minutesRemaining })}</span>
+    <!-- Plan limits, like Claude Desktop: current session + this week, each with its reset time -->
+    <div class="bg-bg-card rounded-xl px-3 py-2.5 space-y-2.5">
+      <div>
+        <div class="flex items-baseline justify-between text-xs">
+          <span class="font-medium text-text-primary">{$t('usage.session')}</span>
+          {#if limit > 0}<span class="text-text-secondary">{$t('usage.used', { pct: blockPct.toFixed(0) })}</span>{:else if usage?.blockActive}<span class="text-text-secondary">{fmtTokens(usage.blockTokens)}</span>{/if}
         </div>
-        {#if limit > 0}
-          <div class="mt-1.5 h-1 rounded-full bg-bg-primary overflow-hidden"><div class="h-full {blockPct >= 90 ? 'bg-red' : blockPct >= 70 ? 'bg-peach' : 'bg-green'}" style="width: {blockPct}%"></div></div>
-        {/if}
-      {:else}
-        <div class="mt-1 text-xs text-text-muted">{$t('usage.noBlock')}</div>
-      {/if}
+        {#if limit > 0}<div class="mt-1 h-1.5 rounded-full bg-bg-primary overflow-hidden"><div class="h-full {barFor(blockPct)}" style="width: {blockPct}%"></div></div>{/if}
+        <div class="mt-0.5 flex justify-between text-[11px] text-text-muted"><span>{sessionResets}</span>{#if limit > 0}<span>{$t('usage.left', { pct: (100 - blockPct).toFixed(0) })}</span>{/if}</div>
+        {#if limit <= 0}<div class="text-[11px] text-text-muted">{$t('usage.setLimit')}</div>{/if}
+      </div>
+      <div>
+        <div class="flex items-baseline justify-between text-xs">
+          <span class="font-medium text-text-primary">{$t('usage.thisWeek')}</span>
+          {#if weekLimit > 0}<span class="text-text-secondary">{$t('usage.used', { pct: weekPct.toFixed(0) })}</span>{:else if usage}<span class="text-text-secondary">{fmtTokens(usage.weekTokens)}</span>{/if}
+        </div>
+        {#if weekLimit > 0}<div class="mt-1 h-1.5 rounded-full bg-bg-primary overflow-hidden"><div class="h-full {barFor(weekPct)}" style="width: {weekPct}%"></div></div>{/if}
+        <div class="mt-0.5 flex justify-between text-[11px] text-text-muted"><span>{weekResets}</span>{#if weekLimit > 0}<span>{$t('usage.left', { pct: (100 - weekPct).toFixed(0) })}</span>{/if}</div>
+        {#if weekLimit <= 0}<div class="text-[11px] text-text-muted">{$t('usage.setWeekLimit')}</div>{/if}
+      </div>
     </div>
 
     <!-- Stack status -->

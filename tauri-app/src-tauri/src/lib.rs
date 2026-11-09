@@ -69,9 +69,22 @@ fn tray_rect(app: &tauri::AppHandle) -> Option<Rect> {
     guard.as_ref()?.rect().ok().flatten()
 }
 
-/// Put the popover under the tray icon (`rect`); without a rect, top-right of the primary monitor.
+/// True when the centre of the tray rectangle lies on one of the connected monitors. With a crowded menu bar macOS
+/// pushes overflowing status items off-screen (negative y), and a widget anchored there would be invisible.
+fn rect_on_screen(app: &tauri::AppHandle, rect: &Rect, scale: f64) -> bool {
+    let p = rect.position.to_physical::<f64>(scale);
+    let s = rect.size.to_physical::<f64>(scale);
+    let (cx, cy) = (p.x + s.width / 2.0, p.y + s.height / 2.0);
+    app.available_monitors().unwrap_or_default().iter().any(|m| {
+        let (mx, my) = (m.position().x as f64, m.position().y as f64);
+        cx >= mx && cx < mx + m.size().width as f64 && cy >= my && cy < my + m.size().height as f64
+    })
+}
+
+/// Put the popover under the tray icon (`rect`); without a usable rect (none, or off-screen), top-right of the primary monitor.
 fn place_popover(app: &tauri::AppHandle, w: &tauri::WebviewWindow, rect: Option<Rect>) {
     let scale = w.scale_factor().unwrap_or(1.0);
+    let rect = rect.filter(|r| rect_on_screen(app, r, scale));
     let width = w.outer_size().map(|s| s.width as f64).unwrap_or(320.0 * scale);
     let (x, y) = match rect {
         Some(rect) => {
@@ -112,13 +125,12 @@ fn rect_key(rect: &Rect) -> (i64, i64, i64, i64) {
     (p.x as i64, p.y as i64, s.width as i64, s.height as i64)
 }
 
-/// Pin/unpin the widget. Pinning shows it immediately and keeps it open until unpinned.
+/// Apply the pinned state. Pinning shows the widget immediately and keeps it open until unpinned.
 ///
 /// At launch macOS reports the tray icon at a temporary position (even off-screen) and moves it to its real
 /// place several seconds later. So after the first placement keep following the icon until its rectangle has
 /// been stable for ~4 s (or 60 s passed); the widget may live on another display than the primary one.
-#[tauri::command]
-fn set_popover_pinned(app: tauri::AppHandle, pinned: bool) {
+fn apply_pin(app: tauri::AppHandle, pinned: bool) {
     POPOVER_PINNED.store(pinned, Ordering::Relaxed);
     if !pinned {
         return;
@@ -155,6 +167,32 @@ fn set_popover_pinned(app: tauri::AppHandle, pinned: bool) {
             }
         }
     });
+}
+
+/// The pinned state lives in a small file (not webview localStorage, which may not be flushed if the app is killed).
+fn pin_file(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
+    app.path().app_data_dir().ok().map(|d| d.join("widget-pinned"))
+}
+
+fn read_pinned(app: &tauri::AppHandle) -> bool {
+    pin_file(app).and_then(|p| std::fs::read_to_string(p).ok()).map_or(false, |t| t.trim() == "1")
+}
+
+/// Pin/unpin the widget from its button; the choice is persisted and restored by the backend at launch.
+#[tauri::command]
+fn set_popover_pinned(app: tauri::AppHandle, pinned: bool) {
+    if let Some(path) = pin_file(&app) {
+        if let Some(dir) = path.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let _ = std::fs::write(path, if pinned { "1" } else { "0" });
+    }
+    apply_pin(app, pinned);
+}
+
+#[tauri::command]
+fn get_popover_pinned(app: tauri::AppHandle) -> bool {
+    read_pinned(&app)
 }
 
 /// Popover button: open the full dashboard and dismiss the popover.
@@ -229,6 +267,15 @@ pub fn run() {
                 *guard = Some(tray);
             }
             tray::start_poller(app.handle().clone());
+            // Restore the pinned widget (also after login) without waiting for any webview.
+            if read_pinned(app.handle()) {
+                // Not inside setup itself: windows cannot be shown reliably before the event loop is running.
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
+                    apply_pin(handle, true);
+                });
+            }
 
             Ok(())
         })
@@ -272,6 +319,7 @@ pub fn run() {
             open_dashboard,
             quit_app,
             set_popover_pinned,
+            get_popover_pinned,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

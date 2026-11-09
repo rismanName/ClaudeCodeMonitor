@@ -24,7 +24,7 @@
         "title": "Claude Code Monitor",
         "url": "/popover",
         "width": 340,
-        "height": 640,
+        "height": 700,
         "visible": false,
         "focus": false,
         "decorations": false,

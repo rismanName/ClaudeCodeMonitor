@@ -5,6 +5,7 @@
   import { settings, saveSettings } from '$lib/stores/settings';
   import { formatCost } from '$lib/format';
   import { t } from '$lib/i18n';
+  import { weekdayNames } from '$lib/usageWindow';
 
   interface CostSpike { isSpike: boolean; lastHourUsd: number; avgHourlyUsd: number }
 
@@ -12,6 +13,10 @@
   let spike: CostSpike | null = null;
   let budgetInput = $settings.dailyBudgetUsd;
   let limitInput = $settings.planLimitTokens;
+  let weeklyInput = $settings.weeklyLimitTokens;
+  let resetDayInput = $settings.weeklyResetDay;
+  let resetTimeInput = $settings.weeklyResetTime;
+  $: days = weekdayNames($settings.language);
   let saved = false;
   let timer: ReturnType<typeof setInterval>;
 
@@ -34,6 +39,9 @@
       ...$settings,
       dailyBudgetUsd: Math.max(0, Number(budgetInput) || 0),
       planLimitTokens: Math.max(0, Math.round(Number(limitInput) || 0)),
+      weeklyLimitTokens: Math.max(0, Math.round(Number(weeklyInput) || 0)),
+      weeklyResetDay: Math.min(6, Math.max(0, Math.round(Number(resetDayInput) || 0))),
+      weeklyResetTime: /^\d{1,2}:\d{2}$/.test(resetTimeInput) ? resetTimeInput : '23:00',
     });
     saved = true;
     setTimeout(() => (saved = false), 2500);
@@ -88,6 +96,25 @@
       <div>
         <label class="block text-sm text-text-secondary mb-1" for="b-limit">{$t('set.planLimit')}</label>
         <input id="b-limit" type="number" min="0" step="100000" bind:value={limitInput}
+          class="w-full bg-bg-primary border border-border-secondary rounded-md px-3 py-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-blue" />
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mb-3">
+      <div>
+        <label class="block text-sm text-text-secondary mb-1" for="b-weekly">{$t('set.weeklyLimit')}</label>
+        <input id="b-weekly" type="number" min="0" step="1000000" bind:value={weeklyInput}
+          class="w-full bg-bg-primary border border-border-secondary rounded-md px-3 py-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-blue" />
+      </div>
+      <div>
+        <label class="block text-sm text-text-secondary mb-1" for="b-day">{$t('set.weeklyResetDay')}</label>
+        <select id="b-day" bind:value={resetDayInput}
+          class="w-full bg-bg-primary border border-border-secondary rounded-md px-3 py-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-blue">
+          {#each days as d, i}<option value={i}>{d}</option>{/each}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm text-text-secondary mb-1" for="b-time">{$t('set.weeklyResetTime')}</label>
+        <input id="b-time" type="time" bind:value={resetTimeInput}
           class="w-full bg-bg-primary border border-border-secondary rounded-md px-3 py-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-blue" />
       </div>
     </div>

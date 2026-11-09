@@ -42,6 +42,12 @@ export interface Settings {
   dailyBudgetUsd: number;
   /** Tokens allowed per 5-hour block on the user's plan. 0 = disabled. */
   planLimitTokens: number;
+  /** Tokens allowed per weekly period on the user's plan. 0 = unknown (no percentage shown). */
+  weeklyLimitTokens: number;
+  /** Day the weekly limit resets: 0 = Sunday … 6 = Saturday. */
+  weeklyResetDay: number;
+  /** Local time of the weekly reset, "HH:MM". */
+  weeklyResetTime: string;
 }
 
 export type TimeRange = '15m' | '1h' | '4h' | '1d' | '7d' | '30d' | '90d' | 'custom';

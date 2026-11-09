@@ -15,6 +15,9 @@ const defaultSettings: Settings = {
   usdToIdrRate: 16000,
   dailyBudgetUsd: 0,
   planLimitTokens: 0,
+  weeklyLimitTokens: 0,
+  weeklyResetDay: 4, // Thursday
+  weeklyResetTime: '23:00',
 };
 
 export const settings = writable<Settings>(defaultSettings);
