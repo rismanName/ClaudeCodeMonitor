@@ -10,6 +10,7 @@
     PrometheusHealthView,
     SettingsModal,
     BudgetBanner,
+    SpikeBanner,
   } from '$lib/components';
   import { isConnected } from '$lib/stores';
   import { invoke } from '@tauri-apps/api/core';
@@ -78,6 +79,7 @@
       </div>
     {/if}
     <BudgetBanner />
+    <SpikeBanner />
     {#if activeView === 'summary'}
       <SummaryView />
     {:else if activeView === 'tokens'}

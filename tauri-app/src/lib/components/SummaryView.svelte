@@ -5,8 +5,6 @@
   //   Expected: unit-tested threshold function; user can dismiss for the day.
   // TODO(offline-cost): In the offline fallback, also show Total Spend from local transcripts.
   //   Expected: cost computed in Rust from a per-model price table (shared with TODO(efficiency-cache-saved)); only tokens are shown today.
-  // TODO(export): Add "Export CSV/JSON" button in the header for the selected range.
-  //   Expected: Tauri save dialog; file contains the metrics shown on screen.
   import { onMount, onDestroy, tick } from 'svelte';
   import { get } from 'svelte/store';
   import { invoke } from '@tauri-apps/api/core';
@@ -90,6 +88,41 @@
   $: rangeSecs = rangeSeconds($timeRangeStore, $customTimeRangeStore);
   // Linear extrapolation of the selected range to 30 days; hidden for ranges shorter than 1 day.
   $: forecast30 = metrics && rangeSecs >= 86400 ? (metrics.totalCostUsd / rangeSecs) * 30 * 86400 : null;
+
+  // ---- Export (CSV / JSON into ~/Downloads) ----
+  let exportMsg = '';
+
+  async function exportReport(kind: 'csv' | 'json') {
+    if (!metrics) return;
+    const m = metrics;
+    const rows: [string, number | string][] = [
+      ['range', $timeRangeStore],
+      ['total_cost_usd', m.totalCostUsd],
+      ['total_tokens', m.totalTokens],
+      ['input_tokens', m.inputTokens],
+      ['output_tokens', m.outputTokens],
+      ['cache_read_tokens', m.cacheReadTokens],
+      ['cache_creation_tokens', m.cacheCreationTokens],
+      ['active_time_seconds', m.activeTimeSeconds],
+      ['sessions', m.sessionCount],
+      ['lines_added', m.linesAdded],
+      ['lines_removed', m.linesRemoved],
+      ['commits', m.commitCount],
+      ['pull_requests', m.pullRequestCount],
+    ];
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const content = kind === 'json'
+      ? JSON.stringify({ exportedAt: new Date().toISOString(), ...Object.fromEntries(rows), tokensByModel: m.tokensByModel }, null, 2)
+      : ['metric,value', ...rows.map(([k, v]) => `${k},${v}`),
+         ...m.tokensByModel.map((x) => `tokens_model:${x.model.replace(/,/g, ' ')},${x.tokens}`)].join('\n') + '\n';
+    try {
+      const path = await invoke<string>('save_export', { fileName: `claude-code-usage-${stamp}.${kind}`, content });
+      exportMsg = `${$t('export.saved')}: ${path}`;
+    } catch (e) {
+      exportMsg = String(e);
+    }
+    setTimeout(() => (exportMsg = ''), 8000);
+  }
 
   async function fetchMetrics() {
     // Update tracked URL on each fetch
@@ -382,8 +415,12 @@
       <p class="text-xs text-text-muted">{getTimeRangeLabel($timeRangeStore)}</p>
     </div>
 
-    <!-- Right: Time range picker -->
-    <div class="flex-shrink-0">
+    <!-- Right: Export + time range picker -->
+    <div class="flex-shrink-0 flex items-center gap-2">
+      {#if metrics}
+        <button on:click={() => exportReport('csv')} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover">CSV</button>
+        <button on:click={() => exportReport('json')} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover">JSON</button>
+      {/if}
       <TimeRangePicker
         value={$timeRangeStore}
         onChange={handleTimeRangeChange}
@@ -392,6 +429,10 @@
       />
     </div>
   </div>
+
+  {#if exportMsg}
+    <div class="mb-2 text-xs text-text-secondary break-all">{exportMsg}</div>
+  {/if}
 
   {#if loading && !metrics}
     <div class="flex items-center justify-center h-32">

@@ -1,4 +1,6 @@
+mod anomaly;
 mod commands;
+mod export;
 mod insights;
 mod metrics;
 mod prometheus;
@@ -93,6 +95,10 @@ pub fn run() {
             telemetry::get_telemetry_status,
             telemetry::enable_claude_telemetry,
             stack::ensure_monitoring_stack,
+            stack::stop_monitoring_stack,
+            stack::restart_monitoring_stack,
+            export::save_export,
+            anomaly::get_cost_spike,
             usage::get_usage_windows,
         ])
         .run(tauri::generate_context!())

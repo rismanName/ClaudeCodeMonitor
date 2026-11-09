@@ -11,6 +11,8 @@ export { default as SparklineChart } from './SparklineChart.svelte';
 export { default as SessionsTable } from './SessionsTable.svelte';
 export { default as SessionDetailModal } from './SessionDetailModal.svelte';
 export { default as SessionsView } from './SessionsView.svelte';
+export { default as ActivityHeatmap } from './ActivityHeatmap.svelte';
+export { default as SpikeBanner } from './SpikeBanner.svelte';
 export { default as UsageWindowCard } from './UsageWindowCard.svelte';
 export { default as BudgetBanner } from './BudgetBanner.svelte';
 export { default as Sidebar } from './Sidebar.svelte';

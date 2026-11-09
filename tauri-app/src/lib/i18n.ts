@@ -117,6 +117,15 @@ const en = {
   'stack.error.no_compose': 'compose.yaml not found. Set the folder in Settings.',
   'stack.error.compose_failed': 'Failed to run compose up.',
   'stack.dismiss': 'Dismiss',
+  'stack.controls': 'Monitoring stack',
+  'stack.start': 'Start',
+  'stack.restart': 'Restart',
+  'stack.stop': 'Stop',
+  'stack.done': 'Done.',
+  'export.saved': 'Saved to',
+  'heat.title': 'Activity Calendar',
+  'heat.weeks': 'Last {n} weeks',
+  'spike.msg': 'Cost spike: {last} in the last hour (usual: {avg}/hour).',
 } as const;
 
 export type TranslationKey = keyof typeof en;
@@ -227,6 +236,15 @@ const id: Record<TranslationKey, string> = {
   'stack.error.no_compose': 'compose.yaml tidak ditemukan. Atur foldernya di Pengaturan.',
   'stack.error.compose_failed': 'Gagal menjalankan compose up.',
   'stack.dismiss': 'Tutup',
+  'stack.controls': 'Stack monitoring',
+  'stack.start': 'Nyalakan',
+  'stack.restart': 'Mulai ulang',
+  'stack.stop': 'Matikan',
+  'stack.done': 'Selesai.',
+  'export.saved': 'Tersimpan di',
+  'heat.title': 'Kalender Aktivitas',
+  'heat.weeks': '{n} minggu terakhir',
+  'spike.msg': 'Lonjakan biaya: {last} dalam 1 jam terakhir (biasanya {avg}/jam).',
 };
 
 const dictionaries = { en, id } as const;

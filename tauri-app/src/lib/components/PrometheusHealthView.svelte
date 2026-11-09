@@ -1,9 +1,10 @@
 <script lang="ts">
-  // TODO(stack-controls): Add Start / Stop / Restart / "Open logs" buttons for the compose stack (reuse stack.rs).
-  //   Expected: new commands stop_monitoring_stack / restart_monitoring_stack; buttons disabled while running; errors shown via the same banner codes.
+  // TODO(stack-logs): "Open logs" button for the compose stack. Expected: shows the last 200 lines of `compose logs` in a modal.
   // TODO(backup): "Export/Import Prometheus data" button (tsdb snapshot via /api/v1/admin/tsdb/snapshot, needs --web.enable-admin-api in compose.yaml).
   //   Expected: .tar.gz saved by user-chosen path; restore restarts the stack.
   import { onMount, onDestroy, tick } from 'svelte';
+  import { t } from '$lib/i18n';
+  import type { TranslationKey } from '$lib/i18n';
   import { invoke } from '@tauri-apps/api/core';
   import { Chart, registerables } from 'chart.js';
   import { settings } from '$lib/stores/settings';
@@ -189,6 +190,28 @@
     customTimeRangeStore.set(range);
   }
 
+  // ---- Stack controls (start / stop / restart the compose stack) ----
+  let stackBusy = false;
+  let stackMsg: { ok: boolean; text: string } | null = null;
+
+  async function stackAction(cmd: 'ensure_monitoring_stack' | 'stop_monitoring_stack' | 'restart_monitoring_stack') {
+    stackBusy = true;
+    stackMsg = null;
+    try {
+      const r = await invoke<{ state: string; code: string; detail: string }>(cmd, {
+        composeDir: $settings.composeDir || null,
+      });
+      stackMsg = r.state === 'error'
+        ? { ok: false, text: `${$t(`stack.error.${r.code}` as TranslationKey)}${r.detail ? ` (${r.detail})` : ''}` }
+        : { ok: true, text: $t('stack.done') };
+    } catch (e) {
+      stackMsg = { ok: false, text: String(e) };
+    } finally {
+      stackBusy = false;
+      fetchHealth();
+    }
+  }
+
   function getTimeRangeLabel(): string {
     if ($timeRangeStore === 'custom' && $customTimeRangeStore) {
       const start = new Date($customTimeRangeStore.start * 1000);
@@ -310,6 +333,16 @@
 </script>
 
 <div class="flex flex-col h-full">
+  <!-- Stack controls -->
+  <div class="flex items-center gap-2 mb-3">
+    <span class="text-xs text-text-muted mr-1">{$t('stack.controls')}:</span>
+    <button disabled={stackBusy} on:click={() => stackAction('ensure_monitoring_stack')} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('stack.start')}</button>
+    <button disabled={stackBusy} on:click={() => stackAction('restart_monitoring_stack')} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('stack.restart')}</button>
+    <button disabled={stackBusy} on:click={() => stackAction('stop_monitoring_stack')} class="px-2 py-1 text-xs rounded-md bg-bg-card border border-border-secondary text-text-secondary hover:bg-bg-card-hover disabled:opacity-50">{$t('stack.stop')}</button>
+    {#if stackBusy}<span class="text-xs text-text-muted">…</span>{/if}
+    {#if stackMsg}<span class="text-xs {stackMsg.ok ? 'text-green' : 'text-red'}">{stackMsg.text}</span>{/if}
+  </div>
+
   <!-- Header -->
   <div class="flex items-center justify-between mb-4">
     <div class="flex-shrink-0">

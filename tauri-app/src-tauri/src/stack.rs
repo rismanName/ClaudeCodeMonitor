@@ -120,3 +120,42 @@ pub async fn ensure_monitoring_stack(compose_dir: Option<String>) -> Result<Stac
         .await
         .map_err(|e| e.to_string())
 }
+
+/// Run `compose <args>` against the project's compose.yaml (stop / restart / etc).
+fn compose_blocking(compose_dir: Option<String>, args: &[&str]) -> StackStatus {
+    let Some(engine) = find_engine() else {
+        return status("error", "no_engine", "docker/podman not found");
+    };
+    if !engine_ready(&engine) {
+        return status("error", "engine_timeout", "container engine is not running");
+    }
+    let dir = compose_dir
+        .filter(|d| !d.trim().is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(DEFAULT_COMPOSE_DIR));
+    let compose_file = dir.join("compose.yaml");
+    if !compose_file.exists() {
+        return status("error", "no_compose", compose_file.display().to_string());
+    }
+    match Command::new(&engine).arg("compose").arg("-f").arg(&compose_file).args(args).output() {
+        Ok(o) if o.status.success() => status("started", "started", ""),
+        Ok(o) => status("error", "compose_failed", String::from_utf8_lossy(&o.stderr).trim().to_string()),
+        Err(e) => status("error", "compose_failed", e.to_string()),
+    }
+}
+
+/// Stop the monitoring containers (data volume is kept).
+#[tauri::command]
+pub async fn stop_monitoring_stack(compose_dir: Option<String>) -> Result<StackStatus, String> {
+    tokio::task::spawn_blocking(move || compose_blocking(compose_dir, &["stop"]))
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Restart the monitoring containers (e.g. after editing prometheus.yml).
+#[tauri::command]
+pub async fn restart_monitoring_stack(compose_dir: Option<String>) -> Result<StackStatus, String> {
+    tokio::task::spawn_blocking(move || compose_blocking(compose_dir, &["restart"]))
+        .await
+        .map_err(|e| e.to_string())
+}
