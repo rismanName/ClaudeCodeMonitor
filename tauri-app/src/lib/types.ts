@@ -30,6 +30,18 @@ export interface Settings {
   prometheusUrl: string;
   refreshInterval: number;
   pricingProvider: 'anthropic' | 'aws-bedrock' | 'google-vertex';
+  language: 'en' | 'id';
+  /** Start Docker + compose stack on app launch when Prometheus is unreachable. */
+  autoStartStack: boolean;
+  /** Folder containing compose.yaml. Empty = repo root baked in at build time. */
+  composeDir: string;
+  currency: 'USD' | 'IDR';
+  /** IDR per 1 USD, manually maintained (no network dependency). */
+  usdToIdrRate: number;
+  /** 0 = disabled. */
+  dailyBudgetUsd: number;
+  /** Tokens allowed per 5-hour block on the user's plan. 0 = disabled. */
+  planLimitTokens: number;
 }
 
 export type TimeRange = '15m' | '1h' | '4h' | '1d' | '7d' | '30d' | '90d' | 'custom';

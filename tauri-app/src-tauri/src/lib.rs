@@ -4,7 +4,9 @@ mod metrics;
 mod prometheus;
 mod prometheus_health;
 mod sessions;
+mod stack;
 mod tray;
+mod usage;
 
 use tauri::{
     menu::{Menu, MenuItem},
@@ -15,6 +17,8 @@ use tauri::{
 use tray::TrayState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+// TODO(autostart): Launch the app at macOS login (tauri-plugin-autostart) — add plugin + capability
+//   + "Launch at login" toggle in Settings. Expected: after reboot the tray icon appears without user action.
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -78,6 +82,8 @@ pub fn run() {
             insights::get_local_stats_cache,
             sessions::get_sessions_data,
             tray::update_tray_stats,
+            stack::ensure_monitoring_stack,
+            usage::get_usage_windows,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

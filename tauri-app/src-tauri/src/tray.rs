@@ -1,3 +1,6 @@
+// TODO(budget-alerts): Add daily/monthly budget thresholds (settings: dailyBudgetUsd, monthlyBudgetUsd).
+//   Expected: when update_tray_stats sees cost >= 80% / 100% of budget, send ONE macOS notification
+//   per threshold per period (tauri-plugin-notification) and tint the tray title orange/red.
 use std::sync::Mutex;
 use tauri::{tray::TrayIcon, State};
 

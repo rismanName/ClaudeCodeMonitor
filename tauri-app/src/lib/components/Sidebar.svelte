@@ -1,7 +1,10 @@
 <script lang="ts">
+  import { formatCost as fmt } from '$lib/format';
   import { onMount, onDestroy } from 'svelte';
+  import { get } from 'svelte/store';
   import { isConnected, lastUpdated, totalCost } from '$lib/stores';
   import { settings } from '$lib/stores/settings';
+  import { t } from '$lib/i18n';
 
   export let activeView: string;
   export let onNavigate: (view: string) => void;
@@ -17,9 +20,9 @@
   }
 
   function formatElapsed(seconds: number): string {
-    if (seconds < 60) return `${seconds} sec ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
-    return `${Math.floor(seconds / 3600)} hr ago`;
+    if (seconds < 60) return `${seconds} ${get(t)('time.sec')}`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} ${get(t)('time.min')}`;
+    return `${Math.floor(seconds / 3600)} ${get(t)('time.hr')}`;
   }
 
   onMount(() => {
@@ -57,9 +60,10 @@
     { id: 'smoke-test', label: 'Smoke Test', icon: 'flask', description: 'Debug and test connectivity' },
   ];
 
-  function formatCost(n: number): string {
-    return `$${n.toFixed(2)}`;
-  }
+  const labelKey: Record<string, any> = {'summary': 'nav.dashboard', 'tokens': 'nav.tokens', 'sessions': 'nav.sessions', 'stats-cache': 'nav.statsCache', 'prometheus-health': 'nav.health', 'smoke-test': 'nav.smoke'};
+  const descKey: Record<string, any> = {'summary': 'nav.dashboard.desc', 'tokens': 'nav.tokens.desc', 'sessions': 'nav.sessions.desc', 'stats-cache': 'nav.statsCache.desc', 'prometheus-health': 'nav.health.desc', 'smoke-test': 'nav.smoke.desc'};
+
+  $: formatCost = $fmt;
 
   function getIcon(name: string): string {
     const icons: Record<string, string> = {
@@ -108,7 +112,7 @@
     <!-- Prometheus Data Section -->
     <div class="mb-3">
       <div class="px-2 py-1.5 text-xs font-medium text-text-muted uppercase tracking-wider">
-        Prometheus Data
+        {$t('nav.prometheus')}
       </div>
       {#each prometheusItems as item}
         {@const colors = tabColors[item.id]}
@@ -133,10 +137,10 @@
             >
               <path stroke-linecap="round" stroke-linejoin="round" d={getIcon(item.icon)} />
             </svg>
-            <span class="text-sm font-medium truncate">{item.label}</span>
+            <span class="text-sm font-medium truncate">{$t(labelKey[item.id])}</span>
           </div>
           {#if activeView === item.id}
-            <div class="text-xs text-text-muted mt-0.5 ml-6 truncate">{item.description}</div>
+            <div class="text-xs text-text-muted mt-0.5 ml-6 truncate">{$t(descKey[item.id])}</div>
           {/if}
         </button>
       {/each}
@@ -145,7 +149,7 @@
     <!-- User Config Folder Section -->
     <div class="mb-3">
       <div class="px-2 py-1.5 text-xs font-medium text-text-muted uppercase tracking-wider">
-        User Config Folder
+        {$t('nav.config')}
       </div>
       {#each claudeCacheItems as item}
         {@const colors = tabColors[item.id]}
@@ -170,10 +174,10 @@
             >
               <path stroke-linecap="round" stroke-linejoin="round" d={getIcon(item.icon)} />
             </svg>
-            <span class="text-sm font-medium truncate">{item.label}</span>
+            <span class="text-sm font-medium truncate">{$t(labelKey[item.id])}</span>
           </div>
           {#if activeView === item.id}
-            <div class="text-xs text-text-muted mt-0.5 ml-6 truncate">{item.description}</div>
+            <div class="text-xs text-text-muted mt-0.5 ml-6 truncate">{$t(descKey[item.id])}</div>
           {/if}
         </button>
       {/each}
@@ -182,7 +186,7 @@
     <!-- Developer Section -->
     <div>
       <div class="px-2 py-1.5 text-xs font-medium text-text-muted uppercase tracking-wider">
-        Developer
+        {$t('nav.developer')}
       </div>
       {#each developerItems as item}
         {@const colors = tabColors[item.id]}
@@ -207,10 +211,10 @@
             >
               <path stroke-linecap="round" stroke-linejoin="round" d={getIcon(item.icon)} />
             </svg>
-            <span class="text-sm font-medium truncate">{item.label}</span>
+            <span class="text-sm font-medium truncate">{$t(labelKey[item.id])}</span>
           </div>
           {#if activeView === item.id}
-            <div class="text-xs text-text-muted mt-0.5 ml-6 truncate">{item.description}</div>
+            <div class="text-xs text-text-muted mt-0.5 ml-6 truncate">{$t(descKey[item.id])}</div>
           {/if}
         </button>
       {/each}
@@ -223,13 +227,13 @@
       <div class="flex items-center gap-1.5">
         <div class="w-2 h-2 rounded-full {$isConnected ? 'bg-accent-green' : 'bg-accent-red'}"></div>
         <span class="text-sm font-bold {$isConnected ? 'text-accent-green' : 'text-accent-red'}">
-          {$isConnected ? 'CONNECTED' : 'DISCONNECTED'}
+          {$isConnected ? $t('status.connected') : $t('status.disconnected')}
         </span>
       </div>
       <button
         on:click={onOpenSettings}
         class="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-bg-card-hover transition-colors"
-        title="Settings (⌘,)"
+        title={$t('settings.tooltip')}
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -242,7 +246,7 @@
         <circle cx="12" cy="12" r="10" stroke-width="2"/>
         <path stroke-width="2" d="M12 6v6l4 2"/>
       </svg>
-      <span>{$lastUpdated ? formatElapsed(elapsedSeconds) : 'never'}</span>
+      <span>{$lastUpdated ? formatElapsed(elapsedSeconds) : $t('status.never')}</span>
     </div>
   </div>
 </aside>

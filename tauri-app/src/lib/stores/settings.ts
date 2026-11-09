@@ -2,12 +2,21 @@ import { writable } from 'svelte/store';
 import { load } from '@tauri-apps/plugin-store';
 import type { Settings } from '$lib/types';
 
+// TODO(telemetry-setup): Add a Settings button "Enable Claude Code telemetry" that appends the CLAUDE_CODE_ENABLE_TELEMETRY /
+//   OTEL_* exports to ~/.zshrc (idempotent, with confirm dialog + backup). Expected: new `claude` sessions report without manual setup.
 const STORE_PATH = 'settings.json';
 
 const defaultSettings: Settings = {
   prometheusUrl: 'http://localhost:9090',
   refreshInterval: 30,
   pricingProvider: 'anthropic',
+  language: 'id',
+  autoStartStack: true,
+  composeDir: '',
+  currency: 'IDR',
+  usdToIdrRate: 16000,
+  dailyBudgetUsd: 0,
+  planLimitTokens: 0,
 };
 
 export const settings = writable<Settings>(defaultSettings);

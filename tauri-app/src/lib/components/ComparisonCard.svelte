@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { MetricComparison } from '$lib/types';
+  import { formatCost } from '$lib/format';
 
   export let label: string;
   export let data: MetricComparison;
@@ -7,7 +8,7 @@
 
   function formatValue(n: number): string {
     if (format === 'currency') {
-      return n >= 1 ? `$${n.toFixed(2)}` : `$${n.toFixed(3)}`;
+      return $formatCost(n);
     }
     if (format === 'compact') {
       if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;

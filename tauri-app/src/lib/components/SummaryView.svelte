@@ -1,9 +1,25 @@
 <script lang="ts">
+  // TODO(efficiency-cache-saved): Show "estimated $ saved by cache" in the Efficiency row.
+  //   Expected: cacheReadTokens * (input price - cache-read price) per model; needs a per-model price table (none exists yet).
+  // TODO(anomaly): Flag cost spikes (current hour > 3x trailing 24h hourly average) with a banner + tray notification.
+  //   Expected: unit-tested threshold function; user can dismiss for the day.
+  // TODO(offline-fallback): When Prometheus is unreachable, fall back to local session data (get_sessions_data)
+  //   for Total Spend / Tokens and show an "Offline - local data" badge. Expected: dashboard never blank if ~/.claude has data.
+  // TODO(forecast): Show projected month-end spend = spend so far / days elapsed * days in month, under Total Spend.
+  //   Expected: hidden for ranges shorter than 1d; unit-test the formula with a fixed date.
+  // TODO(period-compare): Show delta vs previous equal-length period on each MetricCard (reuse ComparisonCard).
+  //   Expected: green/red arrow with % change; "n/a" when previous period is 0.
+  // TODO(export): Add "Export CSV/JSON" button in the header for the selected range.
+  //   Expected: Tauri save dialog; file contains the metrics shown on screen.
   import { onMount, onDestroy, tick } from 'svelte';
+  import { get } from 'svelte/store';
   import { invoke } from '@tauri-apps/api/core';
   import { Chart, registerables } from 'chart.js';
-  import { ViewHeader, MetricCard, TimeRangePicker } from '$lib/components';
+  import { ViewHeader, MetricCard, TimeRangePicker, UsageWindowCard } from '$lib/components';
   import { settings } from '$lib/stores/settings';
+  import { t } from '$lib/i18n';
+  import { formatCost as fmt } from '$lib/format';
+  import { formatCostAxis } from '$lib/format';
   import { isConnected, lastUpdated, timeRange as timeRangeStore, customTimeRange as customTimeRangeStore, totalCost } from '$lib/stores';
   import type { DashboardMetrics, TimeRange, CustomTimeRange } from '$lib/types';
 
@@ -109,10 +125,15 @@
     customTimeRangeStore.set(range);
   }
 
-  function formatCost(n: number): string {
-    if (n >= 1) return `$${n.toFixed(2)}`;
-    return `$${n.toFixed(4)}`;
-  }
+  $: formatCost = $fmt;
+
+  // Efficiency ratios: null when the divisor is 0 (rendered as "-").
+  $: cacheHitRate = metrics && metrics.cacheReadTokens + metrics.inputTokens > 0
+    ? (metrics.cacheReadTokens / (metrics.cacheReadTokens + metrics.inputTokens)) * 100
+    : null;
+  $: costPerCommit = metrics && metrics.commitCount > 0 ? metrics.totalCostUsd / metrics.commitCount : null;
+  $: costPerPr = metrics && metrics.pullRequestCount > 0 ? metrics.totalCostUsd / metrics.pullRequestCount : null;
+  $: costPer100 = metrics && metrics.linesAdded > 0 ? (metrics.totalCostUsd / metrics.linesAdded) * 100 : null;
 
   function formatTokens(n: number): string {
     if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(2)}B`;
@@ -263,7 +284,7 @@
                 },
                 ticks: {
                   color: colors.overlay0,
-                  callback: (v) => `$${Number(v).toFixed(2)}`,
+                  callback: (v) => get(formatCostAxis)(Number(v)),
                   font: { size: 10 },
                   maxTicksLimit: 5,
                 },
@@ -326,7 +347,7 @@
   <div class="flex items-center justify-between mb-4">
     <!-- Left: Dashboard title -->
     <div class="flex-shrink-0">
-      <h1 class="text-lg font-semibold text-text-primary">Dashboard</h1>
+      <h1 class="text-lg font-semibold text-text-primary">{$t('dash.title')}</h1>
       <p class="text-xs text-text-muted">{getTimeRangeLabel($timeRangeStore)}</p>
     </div>
 
@@ -353,28 +374,44 @@
     <!-- Key Metrics Section -->
     <div class="mb-4">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Key Metrics</span>
+        <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$t('dash.keyMetrics')}</span>
         <span class="text-xs text-text-muted">Double-click to copy</span>
       </div>
       <!-- First row: Total Spend, Active Time, Total Tokens -->
       <div class="grid grid-cols-3 gap-2 mb-2">
-        <MetricCard label="Total Spend" value={formatCost(metrics.totalCostUsd)} subtitle={getTimeRangeLabel($timeRangeStore)} color="green" highlight={true} />
-        <MetricCard label="Active Time" value={formatTime(metrics.activeTimeSeconds)} subtitle="coding with Claude" color="cyan" highlight={true} />
-        <MetricCard label="Total Tokens" value={formatTokens(metrics.totalTokens)} subtitle="all models" color="purple" highlight={true} />
+        <MetricCard label={$t('dash.totalSpend')} value={formatCost(metrics.totalCostUsd)} subtitle={getTimeRangeLabel($timeRangeStore)} color="green" highlight={true} />
+        <MetricCard label={$t('dash.activeTime')} value={formatTime(metrics.activeTimeSeconds)} subtitle={$t('dash.activeTime.sub')} color="cyan" highlight={true} />
+        <MetricCard label={$t('dash.totalTokens')} value={formatTokens(metrics.totalTokens)} subtitle={$t('dash.totalTokens.sub')} color="purple" highlight={true} />
       </div>
       <!-- Second row: Lines Added, Lines Removed, Commits, PRs -->
       <div class="grid grid-cols-4 gap-2">
-        <MetricCard label="Lines Added" value={`+${metrics.linesAdded.toLocaleString()}`} subtitle="code added" color="green" />
-        <MetricCard label="Lines Removed" value={`-${metrics.linesRemoved.toLocaleString()}`} subtitle="code removed" color="red" />
-        <MetricCard label="Commits" value={metrics.commitCount.toString()} subtitle="git commits" color="purple" />
-        <MetricCard label="Pull Requests" value={metrics.pullRequestCount?.toString() || '0'} subtitle="PRs created" color="orange" />
+        <MetricCard label={$t('dash.linesAdded')} value={`+${metrics.linesAdded.toLocaleString()}`} subtitle={$t('dash.linesAdded.sub')} color="green" />
+        <MetricCard label={$t('dash.linesRemoved')} value={`-${metrics.linesRemoved.toLocaleString()}`} subtitle={$t('dash.linesRemoved.sub')} color="red" />
+        <MetricCard label={$t('dash.commits')} value={metrics.commitCount.toString()} subtitle={$t('dash.commits.sub')} color="purple" />
+        <MetricCard label={$t('dash.prs')} value={metrics.pullRequestCount?.toString() || '0'} subtitle={$t('dash.prs.sub')} color="orange" />
+      </div>
+    </div>
+
+    <!-- 5-hour usage window (local transcripts) -->
+    <UsageWindowCard />
+
+    <!-- Efficiency -->
+    <div class="mb-4">
+      <div class="mb-2">
+        <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$t('eff.title')}</span>
+      </div>
+      <div class="grid grid-cols-4 gap-2">
+        <MetricCard label={$t('eff.cacheHit')} value={cacheHitRate === null ? '-' : `${cacheHitRate.toFixed(1)}%`} color="cyan" />
+        <MetricCard label={$t('eff.perCommit')} value={costPerCommit === null ? '-' : formatCost(costPerCommit)} color="purple" />
+        <MetricCard label={$t('eff.perPr')} value={costPerPr === null ? '-' : formatCost(costPerPr)} color="orange" />
+        <MetricCard label={$t('eff.per100')} value={costPer100 === null ? '-' : formatCost(costPer100)} color="green" />
       </div>
     </div>
 
     <!-- Total Cost Over Period Chart -->
     <div class="bg-bg-card rounded-md p-4 mb-4">
       <div class="flex items-center justify-between mb-1">
-        <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Total Cost Over Period</span>
+        <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$t('dash.costOverTime')}</span>
         <span class="text-xs text-text-muted">{getTimeRangeLabel($timeRangeStore)}</span>
       </div>
       <div class="h-40">
@@ -385,7 +422,7 @@
     <!-- Cost By Model Section -->
     <div class="bg-bg-card rounded-md p-4">
       <div class="mb-3 text-center">
-        <span class="text-xs font-medium text-text-muted uppercase tracking-wider">Cost By Model</span>
+        <span class="text-xs font-medium text-text-muted uppercase tracking-wider">{$t('dash.costByModel')}</span>
         <span class="text-xs text-text-muted ml-2">breakdown</span>
       </div>
       <div class="flex items-center justify-center gap-8">

@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { formatCost as fmt } from '$lib/format';
+  // TODO(heatmap): GitHub-style activity calendar (last 12 weeks) from stats-cache daily data, colored by cost or messages.
+  //   Expected: tooltip with date + cost; click a day filters Session History to that date.
   import { onMount, onDestroy, tick } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { Chart, registerables } from 'chart.js';
@@ -56,10 +59,7 @@
     return n.toString();
   }
 
-  function formatCost(n: number): string {
-    if (n >= 1) return `$${n.toFixed(2)}`;
-    return `$${n.toFixed(4)}`;
-  }
+  $: formatCost = $fmt;
 
   function formatHour(hour: number | null): string {
     if (hour === null) return '—';

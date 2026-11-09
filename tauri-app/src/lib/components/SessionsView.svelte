@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatCost as fmt } from '$lib/format';
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { SessionDetailModal, TimeRangePicker, ViewHeader } from '$lib/components';
@@ -57,12 +58,7 @@
     return id.length > 12 ? `${id.slice(0, 8)}...${id.slice(-4)}` : id;
   }
 
-  function formatCost(n: number): string {
-    if (n >= 1) return `$${n.toFixed(2)}`;
-    if (n >= 0.01) return `$${n.toFixed(2)}`;
-    if (n > 0) return `$${n.toFixed(4)}`;
-    return '$0.0000';
-  }
+  $: formatCost = $fmt;
 
   function formatTokens(n: number): string {
     if (n === 0) return '0';

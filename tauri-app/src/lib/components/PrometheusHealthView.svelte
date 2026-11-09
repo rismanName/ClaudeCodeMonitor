@@ -1,4 +1,8 @@
 <script lang="ts">
+  // TODO(stack-controls): Add Start / Stop / Restart / "Open logs" buttons for the compose stack (reuse stack.rs).
+  //   Expected: new commands stop_monitoring_stack / restart_monitoring_stack; buttons disabled while running; errors shown via the same banner codes.
+  // TODO(backup): "Export/Import Prometheus data" button (tsdb snapshot via /api/v1/admin/tsdb/snapshot, needs --web.enable-admin-api in compose.yaml).
+  //   Expected: .tar.gz saved by user-chosen path; restore restarts the stack.
   import { onMount, onDestroy, tick } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { Chart, registerables } from 'chart.js';

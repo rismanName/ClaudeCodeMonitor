@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatCost as fmt } from '$lib/format';
   import type { SessionMetrics } from '$lib/types';
 
   export let sessions: SessionMetrics[];
@@ -23,12 +24,7 @@
     return id.length > 12 ? `${id.slice(0, 6)}...${id.slice(-4)}` : id;
   }
 
-  function formatCost(n: number): string {
-    if (n >= 1) return `$${n.toFixed(2)}`;
-    if (n >= 0.01) return `$${n.toFixed(3)}`;
-    if (n > 0) return `$${n.toFixed(4)}`;
-    return '—';
-  }
+  $: formatCost = $fmt;
 
   function formatTokens(n: number): string {
     if (n === 0) return '—';
